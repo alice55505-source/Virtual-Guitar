@@ -11,6 +11,7 @@ const HYMN_CATS = {
   tw: { label: '台語', score: HYMN_TW + 'tw/score/tw', text: HYMN_TW + 'tw/text/tw' },
 };
 
+const OCR_CATS = { db: true, bb: true, xb: true }; // 這幾本的樂譜和弦字型可辨識
 const FU_OFFSET = 780; // 大本附1~附6 存成 db781~db786（同 hymn 詩歌本）
 let hasFu = false;
 const hymnLabel = (cat, num) => HYMN_CATS[cat].label + ' ' + (cat === 'db' && num > FU_OFFSET ? '附' + (num - FU_OFFSET) : num);
@@ -72,20 +73,36 @@ async function openHymn(cat, num) {
   } catch (_) {}
   if (!hymn || hymn.cat !== cat || hymn.num !== num) return;
   $('hymnTitle').textContent = hymnLabel(cat, num) + (hymn.title ? ' ' + hymn.title : '');
-  applySong(info);
+  // 大本／補充本／新頌的和弦常移到吉他好彈的調，要從樂譜上的和弦判斷
+  let chordKey = null;
+  if (OCR_CATS[cat]) {
+    $('hymnMeta').textContent = '讀取和弦中…';
+    chordKey = await detectChordKey(c.score + num + '.png', info ? info.scale : null, info ? info.pc : null);
+    if (!hymn || hymn.cat !== cat || hymn.num !== num) return;
+  }
+  applySong(info, chordKey);
 }
 
 // 依譜設定調、大小調、拍號；再套用這首歌上次的升降 Key／速度／刷法
-function applySong(info) {
+function applySong(info, chordKey) {
   if (playing) stop();
   const pref = songPrefs[hymn.cat + hymn.num] || {};
   let meta = '';
   if (info) {
-    state.sheet = info.pc;
     state.scale = info.scale;
     CHORDS = CHORD_SETS[state.scale];
+    state.sheet = chordKey ? chordKey.key : info.pc;
     if (info.meter && METERS[info.meter]) state.meter = info.meter;
-    meta = s2t(info.label) + (info.meter && !METERS[info.meter] ? '（拍號請手動選）' : '');
+    const kt = keyTable();
+    meta = chordKey && chordKey.key !== info.pc
+      ? '和弦 ' + kt[chordKey.key][0] + ' 調（原調 ' + kt[info.pc][0] + '）'
+      : kt[info.pc][0] + ' 調';
+    if (info.meter) meta += ' ' + info.meter + (METERS[info.meter] ? '' : '（拍號請手動選）');
+  } else if (chordKey) {
+    state.scale = chordKey.scale;
+    CHORDS = CHORD_SETS[state.scale];
+    state.sheet = chordKey.key;
+    meta = '和弦 ' + keyTable()[chordKey.key][0] + ' 調';
   } else {
     meta = '譜上沒標調，請手動設定';
   }
