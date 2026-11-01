@@ -73,6 +73,7 @@ input[type=range] { width: 100%; accent-color: var(--accent); }
   background: var(--bg); color: var(--muted); font-size: 16px;
 }
 .steps span.beat { border-bottom: 2px solid var(--panel2); }
+.steps span.beat:not(:first-child) { margin-left: 10px; }
 .steps span.on { background: var(--accent2); color: #1b1408; }
 
 .pad { display: grid; gap: 8px; grid-template-columns: repeat(3, 1fr); }
