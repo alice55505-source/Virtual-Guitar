@@ -56,7 +56,7 @@ const CHORD_SETS = {
     { deg: 'IV', off: 5, q: '' },
     { deg: 'V', off: 7, q: '' },
     { deg: 'vi', off: 9, q: 'm' },
-    { deg: 'Vsus4', off: 7, q: 'sus4' },
+    { deg: 'iv', off: 5, q: 'm' },
     { deg: 'V7', off: 7, q: '7' },
     { deg: 'III', off: 4, q: '' },
     { deg: 'II', off: 2, q: '' },
