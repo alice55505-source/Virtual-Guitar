@@ -59,12 +59,12 @@
     </div>
 
     <div class="field">
-      <span>速度 <b id="bpmUnit">♩</b> = <b id="bpmVal">80</b></span>
+      <span>速度（<b id="bpmUnit">♩</b> = 每分鐘幾拍）</span>
       <div class="tempo">
         <button id="bpmDown" aria-label="減速">−</button>
-        <input type="range" id="bpm" min="30" max="240" value="80">
+        <div class="bpm-num" id="bpmVal">80</div>
         <button id="bpmUp" aria-label="加速">＋</button>
-        <button id="tap" class="tap">Tap</button>
+        <button id="tap" class="tap">點拍速</button>
       </div>
     </div>
   </section>

@@ -40,11 +40,12 @@ select {
   background: var(--panel); border: 1px solid var(--panel2); border-radius: 10px;
   padding: 9px 8px; width: 100%;
 }
-.tempo { display: grid; grid-template-columns: 44px 1fr 44px 64px; gap: 8px; align-items: center; }
+.tempo { display: grid; grid-template-columns: 52px 1fr 52px 1.2fr; gap: 8px; align-items: center; }
 .tempo button {
   height: 40px; border-radius: 10px; border: 0; background: var(--panel2); font-size: 20px;
 }
-.tempo .tap { font-size: 15px; background: var(--panel); border: 1px solid var(--panel2); }
+.bpm-num { text-align: center; font-size: 30px; font-weight: 800; font-variant-numeric: tabular-nums; }
+.tempo .tap { font-size: 16px; font-weight: 700; background: var(--panel); border: 1px solid var(--panel2); }
 .tempo .tap.hit { background: var(--accent); color: #1b1408; }
 input[type=range] { width: 100%; accent-color: var(--accent); }
 

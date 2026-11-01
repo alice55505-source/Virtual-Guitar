@@ -329,7 +329,7 @@ document.addEventListener('visibilitychange', () => {
 /* ========== 介面 ========== */
 const $ = (id) => document.getElementById(id);
 const keySel = $('keySel'), scaleSel = $('scaleSel'), patternSel = $('patternSel'), changeSel = $('changeSel');
-const bpm = $('bpm'), bpmVal = $('bpmVal'), bpmUnit = $('bpmUnit');
+const bpmVal = $('bpmVal'), bpmUnit = $('bpmUnit');
 const pad = $('pad'), beatsEl = $('beats'), stepsEl = $('steps');
 const chordNameEl = $('chordName'), chordSubEl = $('chordSub'), playBtn = $('playBtn');
 
@@ -408,7 +408,6 @@ function render() {
   modSeg.querySelectorAll('button').forEach((b) => b.classList.toggle('on', b.dataset.mod === state.mod));
   patternSel.value = state.pattern;
   changeSel.value = state.change;
-  bpm.value = state.bpm;
   bpmVal.textContent = state.bpm;
   bpmUnit.textContent = METERS[state.meter].unit;
 
@@ -488,9 +487,16 @@ function setBpm(v) {
   state.bpm = Math.max(30, Math.min(240, Math.round(v)));
   save(); render();
 }
-bpm.addEventListener('input', () => setBpm(+bpm.value));
-$('bpmDown').addEventListener('click', () => setBpm(state.bpm - 1));
-$('bpmUp').addEventListener('click', () => setBpm(state.bpm + 1));
+// −/＋：點一下 ±1，按住會連續加減（越按越快）
+function holdRepeat(el, delta) {
+  let t = null, n = 0;
+  const tick = () => { setBpm(state.bpm + delta * (n > 15 ? 5 : 1)); n++; t = setTimeout(tick, n > 3 ? 80 : 300); };
+  const end = () => { clearTimeout(t); t = null; };
+  el.addEventListener('pointerdown', (e) => { e.preventDefault(); n = 0; end(); tick(); });
+  ['pointerup', 'pointerleave', 'pointercancel'].forEach((ev) => el.addEventListener(ev, end));
+}
+holdRepeat($('bpmDown'), -1);
+holdRepeat($('bpmUp'), 1);
 
 let taps = [];
 $('tap').addEventListener('pointerdown', (e) => {
