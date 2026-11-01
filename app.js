@@ -87,8 +87,8 @@ const METERS = {
   '4/4': { spb: 2, beats: 4, strum: 'B-DU-UDU', arp: '1456-454', unit: '四分音符' },
   '3/4': { spb: 2, beats: 3, strum: 'B-DUDU', arp: '145654', unit: '四分音符' },
   '2/4': { spb: 2, beats: 2, strum: 'B-DU', arp: '1454', unit: '四分音符' },
-  // 6/8：蹦恰恰 蹦恰恰（蹦 = 根，恰 = 下上），用十六分音符格
-  '6/8': { spb: 6, beats: 2, strum: 'B-DUDUB-DUDU', arp: '1-4-5-6-5-4-', unit: '附點四分音符' },
+  // 6/8：一個八分音符算一拍，一音刷一下：根 下 上 根 下 上（grp：每幾格一組，組頭才刷低音）
+  '6/8': { spb: 1, beats: 6, grp: 3, strum: 'BDUBDU', arp: '145654', unit: '八分音符' },
   '3/2': { spb: 4, beats: 3, strum: 'B-DUD-DUD-DU', arp: '145464546454', unit: '二分音符' },
   '2/2': { spb: 4, beats: 2, strum: 'B-DUD-DU', arp: '14546454', unit: '二分音符' },
   '9/8': { spb: 3, beats: 3, strum: 'BDUDDUDDU', arp: '145654654', unit: '附點四分音符' },
@@ -391,7 +391,7 @@ function scheduleStep(i, t) {
   if (state.pattern === 'strum') {
     const c = m.strum[i];
     if (c === 'B') strumLow(notes, t, dur);
-    else if (c === 'D' || c === 'U') strum(notes, t, c, accent, dur, isBeat);
+    else if (c === 'D' || c === 'U') strum(notes, t, c, accent, dur, i % (m.grp || m.spb) === 0);
   } else if (state.pattern === 'beat') {
     if (i === 0) strumLow(notes, t, dur);
     else if (isBeat) strum(notes, t, 'D', accent, dur);
