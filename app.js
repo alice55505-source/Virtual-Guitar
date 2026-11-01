@@ -47,7 +47,11 @@ function quality(ch) {
 }
 
 // 和弦鍵：級數、相對主音的半音、性質
-// 和弦鍵：前 6 個是調內和弦，後 6 個是常用的變化和弦
+// 和弦鍵排法（三個一排）
+// 大調（C 調）：C Dm Em / F G Am / Fm G7 C7 / D E A / D7 E7 A7
+//   前兩排照級數；第三排常用變化；後兩排上下同根音（D→G、E→Am、A→Dm）
+// 小調（e 小調）：Em G Am / Bm C D / Bsus4 B B7 / E7 D7 G7
+//   前兩排調內和弦；第三排 V 家族（回到 Em）；第四排七和弦（E7→Am、D7→G、G7→C）
 const CHORD_SETS = {
   major: [
     { deg: 'I', off: 0, q: '' },
@@ -58,9 +62,9 @@ const CHORD_SETS = {
     { deg: 'vi', off: 9, q: 'm' },
     { deg: 'iv', off: 5, q: 'm' },
     { deg: 'V7', off: 7, q: '7' },
-    { deg: 'III', off: 4, q: '' },
-    { deg: 'II', off: 2, q: '' },
     { deg: 'I7', off: 0, q: '7' },
+    { deg: 'II', off: 2, q: '' },
+    { deg: 'III', off: 4, q: '' },
     { deg: 'VI', off: 9, q: '' },
     { deg: 'II7', off: 2, q: '7' },
     { deg: 'III7', off: 4, q: '7' },
@@ -74,11 +78,11 @@ const CHORD_SETS = {
     { deg: '♭VI', off: 8, q: '' },
     { deg: '♭VII', off: 10, q: '' },
     { deg: 'Vsus4', off: 7, q: 'sus4' },
-    { deg: 'V7', off: 7, q: '7' },
     { deg: 'V', off: 7, q: '' },
+    { deg: 'V7', off: 7, q: '7' },
+    { deg: 'I7', off: 0, q: '7' },
     { deg: '♭VII7', off: 10, q: '7' },
     { deg: '♭III7', off: 3, q: '7' },
-    { deg: 'I7', off: 0, q: '7' },
   ],
 };
 let CHORDS = CHORD_SETS.major;
