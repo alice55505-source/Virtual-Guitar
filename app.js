@@ -44,31 +44,31 @@ function quality(ch) {
 }
 
 // 和弦鍵：級數、相對主音的半音、性質
-// top: 最常用，放第一排、放大
+// 和弦鍵：前 6 個是調內和弦，後 6 個是常用的變化和弦
 const CHORD_SETS = {
   major: [
-    { deg: 'I', off: 0, q: '', top: true },
-    { deg: 'ii', off: 2, q: 'm', top: true },
-    { deg: 'IV', off: 5, q: '', top: true },
-    { deg: 'V', off: 7, q: '', top: true },
-    { deg: 'V7', off: 7, q: '7', top: true },
-    { deg: 'vi', off: 9, q: 'm', top: true },
+    { deg: 'I', off: 0, q: '' },
+    { deg: 'ii', off: 2, q: 'm' },
     { deg: 'iii', off: 4, q: 'm' },
+    { deg: 'IV', off: 5, q: '' },
+    { deg: 'V', off: 7, q: '' },
+    { deg: 'vi', off: 9, q: 'm' },
     { deg: 'Vsus4', off: 7, q: 'sus4' },
-    { deg: 'I7', off: 0, q: '7' },
+    { deg: 'V7', off: 7, q: '7' },
     { deg: 'III', off: 4, q: '' },
     { deg: 'II', off: 2, q: '' },
-    { deg: 'iv', off: 5, q: 'm' },
+    { deg: 'I7', off: 0, q: '7' },
+    { deg: 'VI', off: 9, q: '' },
   ],
   minor: [
-    { deg: 'i', off: 0, q: 'm', top: true },
-    { deg: '♭III', off: 3, q: '', top: true },
-    { deg: 'iv', off: 5, q: 'm', top: true },
-    { deg: 'V7', off: 7, q: '7', top: true },
-    { deg: '♭VI', off: 8, q: '', top: true },
-    { deg: '♭VII', off: 10, q: '', top: true },
+    { deg: 'i', off: 0, q: 'm' },
+    { deg: '♭III', off: 3, q: '' },
+    { deg: 'iv', off: 5, q: 'm' },
     { deg: 'v', off: 7, q: 'm' },
+    { deg: '♭VI', off: 8, q: '' },
+    { deg: '♭VII', off: 10, q: '' },
     { deg: 'V', off: 7, q: '' },
+    { deg: 'V7', off: 7, q: '7' },
     { deg: 'Vsus4', off: 7, q: 'sus4' },
     { deg: 'ii°', off: 2, q: 'dim' },
     { deg: 'IV', off: 5, q: '' },
@@ -533,15 +533,15 @@ const solButtons = PITCH_KEYS.map((p, k) => {
   return b;
 });
 
-// 和弦鍵：常用的放上面一排（大），其他放下面（小）；換大小調時重建
+// 和弦鍵：換大小調時重建
 let padButtons = [], padFor = null;
 function buildPad() {
-  pad.innerHTML = '<div class="pad-main"></div><div class="pad-more"></div>';
+  pad.innerHTML = '';
   padButtons = CHORDS.map((c, i) => {
     const b = document.createElement('button');
     b.innerHTML = '<span class="n"></span><span class="d"></span>';
     b.addEventListener('pointerdown', (e) => { e.preventDefault(); pressChord(i); });
-    pad.querySelector(c.top ? '.pad-main' : '.pad-more').appendChild(b);
+    pad.appendChild(b);
     return b;
   });
   padFor = CHORDS;

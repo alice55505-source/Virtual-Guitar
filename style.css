@@ -75,8 +75,7 @@ input[type=range] { width: 100%; accent-color: var(--accent); }
 .steps span.beat { border-bottom: 2px solid var(--panel2); }
 .steps span.on { background: var(--accent2); color: #1b1408; }
 
-.pad, .pad-main, .pad-more { display: grid; gap: 8px; }
-.pad-main, .pad-more { grid-template-columns: repeat(3, 1fr); }
+.pad { display: grid; gap: 8px; grid-template-columns: repeat(3, 1fr); }
 .pad button {
   border: 0; border-radius: 14px; background: var(--panel2); padding: 14px 4px 10px;
   display: grid; gap: 2px; min-height: 76px;
@@ -101,7 +100,7 @@ input[type=range] { width: 100%; accent-color: var(--accent); }
 .play.stop { background: #d9534f; color: #fff; }
 
 @media (min-width: 560px) {
-  .pad-main, .pad-more { grid-template-columns: repeat(6, 1fr); }
+  .pad { grid-template-columns: repeat(6, 1fr); }
 }
 
 .tempo.keyshift { grid-template-columns: 1fr 1.3fr 1fr; }
@@ -167,8 +166,7 @@ body.score-mode .pitch { flex: none; margin-bottom: 6px; gap: 4px; }
 body.score-mode .pitch-head { display: none; }
 body.score-mode .solfege button { padding: 7px 0 2px; }
 body.score-mode .solfege button .n { font-size: 16px; }
-body.score-mode .pad { flex: none; gap: 5px; }
-body.score-mode .pad-main, body.score-mode .pad-more { grid-template-columns: repeat(6, 1fr); gap: 5px; }
+body.score-mode .pad { flex: none; gap: 5px; grid-template-columns: repeat(6, 1fr); }
 body.score-mode .pad button { min-height: 48px; padding: 5px 1px; }
 body.score-mode .pad button .n { font-size: 18px; }
 body.score-mode .pad button .d { font-size: 10px; }
