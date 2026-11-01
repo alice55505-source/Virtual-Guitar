@@ -51,7 +51,14 @@ function parseKey(text) {
 async function openHymn(cat, num) {
   const c = HYMN_CATS[cat];
   if (playing) stop();
+  stopMelody();
   hymn = { cat, num, title: '' };
+  updateMelodyBtn();
+  loadMelody(cat, num).then((song) => {
+    if (!hymn || hymn.cat !== cat || hymn.num !== num) return;
+    hymn.song = song;
+    updateMelodyBtn();
+  });
   document.body.classList.add('score-mode');
   document.body.classList.remove('show-settings');
   $('hymnTitle').textContent = hymnLabel(cat, num);
@@ -165,6 +172,7 @@ async function stepHymn(dir) {
 
 function closeHymn() {
   if (playing) stop();
+  stopMelody();
   hymn = null;
   document.body.classList.remove('score-mode', 'show-settings');
   $('scoreScroll').innerHTML = '';
@@ -218,6 +226,18 @@ $('hymnNum').addEventListener('keydown', (e) => { if (e.key === 'Enter') submitP
 $('hymnPicker').addEventListener('click', (e) => { if (e.target.id === 'hymnPicker') closePicker(); });
 $('hymnClose').addEventListener('click', closeHymn);
 $('hymnSwitch').addEventListener('click', openPicker);
+// ♪ 旋律：只播旋律，照目前速度和調
+function updateMelodyBtn() {
+  const b = $('melodyBtn');
+  b.style.display = hymn && hymn.song ? '' : 'none';
+  b.textContent = melodyPlaying() ? '■ 停止旋律' : '♪ 旋律';
+  b.classList.toggle('on', melodyPlaying());
+}
+$('melodyBtn').addEventListener('click', () => {
+  if (melodyPlaying()) stopMelody();
+  else if (hymn && hymn.song) startMelody(hymn.song, updateMelodyBtn);
+  updateMelodyBtn();
+});
 $('prevHymn').addEventListener('click', () => stepHymn(-1));
 $('nextHymn').addEventListener('click', () => stepHymn(1));
 $('settingsBtn').addEventListener('click', () => document.body.classList.toggle('show-settings'));
