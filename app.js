@@ -439,14 +439,22 @@ function noteName(pc) {
 }
 
 // 柔和的持續音（像風琴），方便對音
-function playTone(midi, t, len = 1.6) {
+let lastTone = null;
+function playTone(midi, t, len = 0.7) {
+  // 連按時先收掉上一個音
+  if (lastTone) {
+    lastTone.gain.cancelScheduledValues(t);
+    lastTone.gain.setValueAtTime(lastTone.gain.value, t);
+    lastTone.gain.linearRampToValueAtTime(0, t + 0.03);
+  }
   const f = 440 * Math.pow(2, (midi - 69) / 12);
   const g = ctx.createGain();
   g.gain.setValueAtTime(0, t);
   g.gain.linearRampToValueAtTime(0.28, t + 0.03);
-  g.gain.setValueAtTime(0.28, t + len - 0.3);
+  g.gain.setValueAtTime(0.28, t + len - 0.2);
   g.gain.linearRampToValueAtTime(0, t + len);
   g.connect(master);
+  lastTone = g;
   [[1, 'triangle', 1], [2, 'sine', 0.25]].forEach(([mul, type, amp]) => {
     const o = ctx.createOscillator();
     const og = ctx.createGain();
