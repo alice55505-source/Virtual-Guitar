@@ -60,8 +60,7 @@ async function openHymn(cat, num) {
   closePicker();
   recent = [{ cat, num }].concat(recent.filter((r) => !(r.cat === cat && r.num === num))).slice(0, 8);
   saveSongs();
-  updateAutoBtn();
-  const pagesP = loadScore(cat, num);
+  loadScore(cat, num);
 
   let info = null;
   try {
@@ -79,16 +78,10 @@ async function openHymn(cat, num) {
   let chordKey = null;
   if (OCR_CATS[cat]) {
     $('hymnMeta').textContent = '讀取樂譜和弦中…';
-    const pages = await pagesP;
-    const a = pages && pages.length ? await analyzeScore(pages, info ? info.scale : null, info ? info.pc : null) : null;
+    chordKey = await detectChordKey(c.score + num + '.png', info ? info.scale : null, info ? info.pc : null);
     if (!hymn || hymn.cat !== cat || hymn.num !== num) return;
-    if (a) {
-      chordKey = { key: a.key, scale: a.scale };
-      if (a.timeline && a.timeline.bars.length) hymn.timeline = a.timeline;
-    }
   }
   applySong(info, chordKey);
-  updateAutoBtn();
 }
 
 // 依譜設定調、大小調、拍號；再套用這首歌上次的升降 Key／速度／刷法
@@ -148,50 +141,7 @@ async function loadScore(cat, num) {
   });
   setZoom(1);
   box.scrollTop = 0;
-  return pages;
 }
-
-/* ---------- 照譜播放 ---------- */
-function updateAutoBtn() {
-  const b = $('autoBtn');
-  const ok = !!(hymn && hymn.timeline);
-  b.style.display = ok ? '' : 'none';
-  b.textContent = auto ? '■ 停止' : '▶ 照譜';
-  b.classList.toggle('on', !!auto);
-}
-
-// 在樂譜上框出目前的小節，並捲到看得到的地方
-window.onAutoBar = (bar, verse) => {
-  document.querySelectorAll('.bar-mark').forEach((e) => e.remove());
-  updateAutoBtn();
-  if (!hymn || !hymn.timeline || bar === null || bar === undefined) return;
-  if (bar < 0) { $('autoBtn').textContent = '■ 前奏'; return; }
-  $('autoBtn').textContent = '■ 第' + verse + '遍';
-  const b = hymn.timeline.bars[bar];
-  const wraps = document.querySelectorAll('#scoreScroll .score-page');
-  let first = null;
-  for (const p of b.pieces) {
-    const wrap = wraps[p.page];
-    const img = wrap && wrap.querySelector('img');
-    if (!img || !img.naturalWidth) continue;
-    const k = img.clientWidth / img.naturalWidth;
-    const m = document.createElement('div');
-    m.className = 'bar-mark';
-    m.style.left = p.x0 * k + 'px';
-    m.style.top = (p.y0 - 30) * k + 'px';
-    m.style.width = (p.x1 - p.x0) * k + 'px';
-    m.style.height = (p.y1 - p.y0 + 34) * k + 'px';
-    wrap.appendChild(m);
-    if (!first) first = m;
-  }
-  if (first) first.scrollIntoView({ block: 'nearest', inline: 'nearest', behavior: 'smooth' });
-};
-
-$('autoBtn').addEventListener('click', () => {
-  if (auto) { stop(); return; }
-  if (hymn && hymn.timeline) startAuto(hymn.timeline.bars);
-  updateAutoBtn();
-});
 
 function setZoom(z) {
   zoom = z;
@@ -200,7 +150,7 @@ function setZoom(z) {
 }
 
 function closeHymn() {
-  if (auto) stop();
+  if (playing) stop();
   hymn = null;
   document.body.classList.remove('score-mode', 'show-settings');
   $('scoreScroll').innerHTML = '';

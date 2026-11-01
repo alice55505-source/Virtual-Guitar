@@ -38,7 +38,7 @@ const MOD_MAP = {
   sus2: { '': 'sus2', m: 'sus2' },
   sus4: { '': 'sus4', m: 'sus4', '7': '7sus4' },
 };
-// 和弦物件：按鍵的 {i, mod}，或照譜播放的 {off: 距譜上主音幾半音, q: 性質}
+// 和弦物件：按鍵的 {i, mod}，或 {off: 距譜上主音幾半音, q: 性質}
 function chordOff(ch) { return ch.off !== undefined ? ch.off : CHORDS[ch.i].off; }
 function quality(ch) {
   if (ch.q !== undefined) return ch.q;
@@ -363,27 +363,12 @@ function scheduleStep(i, t) {
   const dur = stepDur();
   const isBeat = i % m.spb === 0;
   if (isBeat) { beatHist.push(t); if (beatHist.length > 16) beatHist.shift(); }
-  // 照譜播放：每小節開頭往下一小節，到該格就換成譜上的和弦
-  if (auto) {
-    if (i === 0) {
-      auto.bar++;
-      if (auto.bar >= auto.bars.length) { auto.bar = 0; auto.verse++; }
-    }
-    if (auto.bar >= 0) {
-      // 簡譜的音符間距跟拍長不成比例，只對齊到「拍」：扣掉小節線後的空白，偏早取整
-      for (const c of auto.bars[auto.bar].ch) {
-        const fe = Math.max(0, (c.frac - 0.12) / 0.88);
-        const beat = Math.min(m.beats - 1, Math.floor(fe * m.beats + 0.35));
-        if (beat * m.spb === i) current = { off: (c.r - state.sheet + 12) % 12, q: c.q };
-      }
-    }
-  }
   if (pending !== null) {
     const due = isBeat && t >= pendingAt - 1e-3;
     if (due) { current = pending; pending = null; }
   }
   const chord = current;
-  visQueue.push({ t, step: i, chord, bar: auto ? auto.bar : null, verse: auto ? auto.verse : 0 });
+  visQueue.push({ t, step: i, chord });
   if (chord === null) return;
 
   const notes = voicing(chord);
@@ -444,22 +429,7 @@ function start() {
   render();
 }
 
-// 照譜播放：bars 來自 chord-ocr.js；先空一小節前奏（彈第一個和弦）
-let auto = null;
-function startAuto(bars) {
-  if (playing) stop();
-  const first = bars.flatMap((b) => b.ch)[0];
-  if (!first) return false;
-  auto = { bars, bar: -2, verse: 1 };
-  lastVisBar = null;
-  current = { off: (first.r - state.sheet + 12) % 12, q: first.q };
-  start();
-  return true;
-}
-
 function stop() {
-  auto = null;
-  if (window.onAutoBar) window.onAutoBar(null);
   playing = false;
   clearInterval(timer); timer = null;
   stopAll();
@@ -581,7 +551,6 @@ function buildPad() {
 
 function pressChord(i) {
   const ch = { i, mod: state.mod };
-  if (auto) { auto = null; if (window.onAutoBar) window.onAutoBar(null); } // 自己按和弦就改回手動
   if (!playing) {
     current = ch;
     start();
@@ -673,7 +642,7 @@ function render() {
   playBtn.classList.toggle('stop', playing);
 }
 
-let lastVisStep = -1, lastVisBar = null;
+let lastVisStep = -1;
 function drawBeat(i) {
   const m = METERS[state.meter];
   const beat = i < 0 ? -1 : Math.floor(i / m.spb);
@@ -685,7 +654,6 @@ function frame() {
   if (ctx && playing) {
     let changed = false, item = null;
     while (visQueue.length && visQueue[0].t <= ctx.currentTime) { item = visQueue.shift(); changed = true; }
-    if (changed && auto && window.onAutoBar && item.bar !== lastVisBar) { lastVisBar = item.bar; window.onAutoBar(item.bar, item.verse); }
     if (changed && item.step !== lastVisStep) {
       lastVisStep = item.step;
       drawBeat(item.step);

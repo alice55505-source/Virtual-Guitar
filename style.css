@@ -190,6 +190,3 @@ body.score-mode .play { height: 46px; font-size: 18px; }
 .picker-recent button { border: 0; border-radius: 8px; background: var(--panel2); padding: 6px 10px; }
 .score-page { position: relative; width: var(--zoom, 100%); }
 .score-page img { width: 100% !important; }
-.bar-mark { position: absolute; background: rgba(255, 196, 0, .28); border: 2px solid rgba(230, 140, 0, .9); border-radius: 6px; pointer-events: none; }
-.score-head .auto-btn { background: var(--on); color: #08130d; font-weight: 800; }
-.score-head .auto-btn.on { background: #d9534f; color: #fff; }
