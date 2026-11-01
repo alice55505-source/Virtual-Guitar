@@ -86,6 +86,7 @@ const keyTable = () => (state.scale === 'minor' ? MINOR_KEYS : MAJOR_KEYS);
 const METERS = {
   '4/4': { spb: 2, beats: 4, strum: 'B-DU-UDU', arp: '1456-454', unit: '四分音符' },
   '3/4': { spb: 2, beats: 3, strum: 'B-DUDU', arp: '145654', unit: '四分音符' },
+  '2/4': { spb: 2, beats: 2, strum: 'B-DU', arp: '1454', unit: '四分音符' },
   '6/8': { spb: 3, beats: 2, strum: 'B-DUDU', arp: '145654', unit: '附點四分音符' },
   '3/2': { spb: 4, beats: 3, strum: 'B-DUD-DUD-DU', arp: '145464546454', unit: '二分音符' },
   '2/2': { spb: 4, beats: 2, strum: 'B-DUD-DU', arp: '14546454', unit: '二分音符' },
