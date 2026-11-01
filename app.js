@@ -158,12 +158,14 @@ function initAudio() {
   ctx = new (window.AudioContext || window.webkitAudioContext)({ latencyHint: 'interactive' });
   const body = ctx.createBiquadFilter();
   body.type = 'peaking'; body.frequency.value = 220; body.Q.value = 1; body.gain.value = 4;
+  const low = ctx.createBiquadFilter();
+  low.type = 'lowshelf'; low.frequency.value = 160; low.gain.value = 5;
   const air = ctx.createBiquadFilter();
   air.type = 'highshelf'; air.frequency.value = 4000; air.gain.value = -6;
   const comp = ctx.createDynamicsCompressor();
   comp.threshold.value = -14; comp.ratio.value = 4;
   master = ctx.createGain(); master.gain.value = 0.8;
-  master.connect(body); body.connect(air); air.connect(comp); comp.connect(ctx.destination);
+  master.connect(low); low.connect(body); body.connect(air); air.connect(comp); comp.connect(ctx.destination);
   prewarm();
 }
 
@@ -235,10 +237,18 @@ function cutAll(now) {
   strings.fill(null);
 }
 
-function strum(notes, t, dir, vel, dur) {
-  const span = Math.min(0.035, dur * 0.35);
+// dir: 'D' 下刷 / 'U' 上刷；bass: true 時從根音開始刷並加重根音，false 時跳過低音弦讓根音繼續響
+function strum(notes, t, dir, vel, dur, bass = true) {
+  const span = Math.min(0.04, dur * 0.35);
   if (dir === 'D') {
-    for (let s = 0; s < 6; s++) playString(s, notes[s], t + (span * s) / 5, vel * (0.85 + 0.03 * s));
+    if (bass) {
+      // 根音先出、最重，其餘弦隨後刷下
+      playString(0, notes[0], t, Math.min(1.5, vel * 1.45));
+      for (let s = 1; s < 6; s++) playString(s, notes[s], t + 0.012 + (span * (s - 1)) / 5, vel * 0.85);
+    } else {
+      // 反拍下刷：只刷 2~6 弦
+      for (let s = 2; s < 6; s++) playString(s, notes[s], t + (span * (s - 2)) / 4, vel * 0.75);
+    }
   } else {
     // 上刷只刷高音 4 條弦，較輕
     for (let k = 0; k < 4; k++) {
@@ -314,7 +324,7 @@ function scheduleStep(i, t) {
 
   if (state.pattern === 'strum') {
     const c = m.strum[i];
-    if (c === 'D' || c === 'U') strum(notes, t, c, accent, dur);
+    if (c === 'D' || c === 'U') strum(notes, t, c, accent, dur, isBeat);
   } else if (state.pattern === 'beat') {
     if (isBeat) strum(notes, t, 'D', accent, dur);
   } else {
