@@ -105,7 +105,7 @@ if (!METERS[state.meter]) state.meter = '4/4';
 if (!CHORD_SETS[state.scale]) state.scale = 'major';
 if (!state.v2) { if (state.change === 'now') state.change = 'beat'; state.v2 = 1; }
 CHORDS = CHORD_SETS[state.scale];
-if (!MODS.some((m) => m[0] === state.mod)) state.mod = '';
+state.mod = ''; // 和弦變化列已移除，一律用原和弦
 const save = () => { try { localStorage.setItem('vg-settings', JSON.stringify(state)); } catch (_) {} };
 
 let current = null;   // 正在彈的和弦 {i, mod}
@@ -485,16 +485,7 @@ function pressChord(i) {
   render();
 }
 
-const modSeg = $('modSeg');
-MODS.forEach(([v, label]) => {
-  const b = document.createElement('button');
-  b.textContent = label; b.dataset.mod = v;
-  modSeg.appendChild(b);
-});
-modSeg.addEventListener('click', (e) => {
-  const b = e.target.closest('button'); if (!b) return;
-  state.mod = b.dataset.mod; save(); render();
-});
+
 
 function buildSteps() {
   const m = METERS[state.meter];
@@ -524,7 +515,6 @@ function render() {
   document.querySelectorAll('#meterSeg button').forEach((b) => b.classList.toggle('on', b.dataset.meter === state.meter));
   keySel.value = state.key;
   scaleSel.value = state.scale;
-  modSeg.querySelectorAll('button').forEach((b) => b.classList.toggle('on', b.dataset.mod === state.mod));
   patternSel.value = state.pattern;
   changeSel.value = state.change;
   bpmVal.textContent = state.bpm;
@@ -595,7 +585,6 @@ $('meterSeg').addEventListener('click', (e) => {
 scaleSel.addEventListener('change', () => {
   state.scale = scaleSel.value;
   CHORDS = CHORD_SETS[state.scale];
-if (!MODS.some((m) => m[0] === state.mod)) state.mod = '';
   save(); buildKeys(); lastChord = null; render();
 });
 keySel.addEventListener('change', () => { state.key = +keySel.value; save(); lastChord = null; render(); });

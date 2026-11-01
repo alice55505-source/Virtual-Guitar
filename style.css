@@ -104,4 +104,3 @@ input[type=range] { width: 100%; accent-color: var(--accent); }
   .pad { grid-template-columns: repeat(4, 1fr); }
 }
 
-.seg.mods { width: 100%; grid-template-columns: repeat(5, 1fr); margin-bottom: 8px; }
