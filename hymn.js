@@ -81,7 +81,6 @@ function applySong(info) {
     state.sheet = info.pc;
     state.scale = info.scale;
     CHORDS = CHORD_SETS[state.scale];
-    buildKeys();
     if (info.meter && METERS[info.meter]) state.meter = info.meter;
     meta = s2t(info.label) + (info.meter && !METERS[info.meter] ? '（拍號請手動選）' : '');
   } else {

@@ -9,8 +9,9 @@ const MAJOR_KEYS = [
   ['F#', 6, SHARP], ['G', 7, SHARP], ['Ab', 8, FLAT], ['A', 9, SHARP], ['Bb', 10, FLAT], ['B', 11, SHARP],
 ];
 const MINOR_KEYS = [
-  ['Cm', 0, FLAT], ['C#m', 1, SHARP], ['Dm', 2, FLAT], ['Ebm', 3, FLAT], ['Em', 4, SHARP], ['Fm', 5, FLAT],
-  ['F#m', 6, SHARP], ['Gm', 7, FLAT], ['G#m', 8, SHARP], ['Am', 9, SHARP], ['Bbm', 10, FLAT], ['Bm', 11, SHARP],
+  // 小調照簡譜寫法用小寫（e = e 小調）
+  ['c', 0, FLAT], ['c#', 1, SHARP], ['d', 2, FLAT], ['eb', 3, FLAT], ['e', 4, SHARP], ['f', 5, FLAT],
+  ['f#', 6, SHARP], ['g', 7, FLAT], ['g#', 8, SHARP], ['a', 9, SHARP], ['bb', 10, FLAT], ['b', 11, SHARP],
 ];
 
 const QUALITY = {
@@ -491,16 +492,20 @@ document.addEventListener('visibilitychange', () => {
 
 /* ========== 介面 ========== */
 const $ = (id) => document.getElementById(id);
-const sheetSel = $('sheetSel'), shiftVal = $('shiftVal'), scaleSel = $('scaleSel'), patternSel = $('patternSel');
+const sheetSel = $('sheetSel'), shiftVal = $('shiftVal'), patternSel = $('patternSel');
 const bpmVal = $('bpmVal'), bpmUnit = $('bpmUnit');
 const pad = $('pad'), beatsEl = $('beats'), stepsEl = $('steps');
 const chordNameEl = $('chordName'), chordSubEl = $('chordSub'), playBtn = $('playBtn');
 
+// 譜上的調：大調大寫（C D E…）、小調小寫（c d e…），跟簡譜一樣
 function buildKeys() {
-  for (const sel of [sheetSel]) {
-    sel.innerHTML = '';
-    keyTable().forEach((k, i) => sel.add(new Option(k[0], i)));
-  }
+  sheetSel.innerHTML = '';
+  [['major', '大調', MAJOR_KEYS], ['minor', '小調', MINOR_KEYS]].forEach(([sc, label, table]) => {
+    const g = document.createElement('optgroup');
+    g.label = label;
+    table.forEach((k, i) => g.appendChild(new Option(k[0] + '（' + label + '）', sc + ':' + i)));
+    sheetSel.appendChild(g);
+  });
 }
 buildKeys();
 Object.keys(METERS).forEach((m) => {
@@ -580,8 +585,7 @@ function buildSteps() {
 function render() {
   // 模式
   document.querySelectorAll('#meterSeg button').forEach((b) => b.classList.toggle('on', b.dataset.meter === state.meter));
-  sheetSel.value = state.sheet;
-  scaleSel.value = state.scale;
+  sheetSel.value = state.scale + ':' + state.sheet;
   patternSel.value = state.pattern;
   bpmVal.textContent = state.bpm;
   bpmUnit.textContent = METERS[state.meter].unit;
@@ -590,7 +594,7 @@ function render() {
   const sameAsAbs = state.shift === 0;
   const keyName = keyTable()[state.key][0];
   solButtons.forEach((b, k) => { b.querySelector('.d').textContent = noteName(doPc() + SOLFEGE[k][1]); });
-  $('doLabel').textContent = '1 = ' + noteName(doPc()) + (state.scale === 'minor' ? '（6 = ' + keyName.replace('m', '') + '）' : '');
+  $('doLabel').textContent = '1 = ' + noteName(doPc()) + (state.scale === 'minor' ? '（6 = ' + noteName(state.key) + '）' : '');
   shiftVal.innerHTML = state.shift === 0
     ? '原調 <small>' + keyName + '</small>'
     : (state.shift > 0 ? '升 ' : '降 ') + Math.abs(state.shift) + ' <small>' + keyName + ' 調</small>';
@@ -647,12 +651,13 @@ $('meterSeg').addEventListener('click', (e) => {
   if (playing) { step = 0; visQueue.length = 0; beatHist = []; }
   buildSteps(); render();
 });
-scaleSel.addEventListener('change', () => {
-  state.scale = scaleSel.value;
+sheetSel.addEventListener('change', () => {
+  const [sc, i] = sheetSel.value.split(':');
+  state.scale = sc;
+  state.sheet = +i;
   CHORDS = CHORD_SETS[state.scale];
-  save(); buildKeys(); lastChord = null; render();
+  syncKey(); save(); lastChord = null; render();
 });
-sheetSel.addEventListener('change', () => { state.sheet = +sheetSel.value; syncKey(); save(); lastChord = null; render(); });
 function setShift(v) {
   state.shift = Math.max(-6, Math.min(6, v));
   syncKey(); save(); lastChord = null; render();
