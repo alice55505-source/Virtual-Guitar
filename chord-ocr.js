@@ -110,7 +110,7 @@ function readChords(data) {
   const letters = [], others = [];
   for (const c of comps) {
     const h = c.y1 - c.y0 + 1;
-    if (h >= 12 && h <= 22) {
+    if (h >= 12 && h <= 32) {
       const [l, d] = classifyGlyph(glyphVector(mask, w, c), (c.x1 - c.x0 + 1) / h);
       if (l && OCR_PC[l[0]] !== undefined && d < 0.08) {
         // E 和 F 只差底下一橫：看最底兩列有沒有橫線
