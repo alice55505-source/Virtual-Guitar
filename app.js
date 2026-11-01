@@ -67,12 +67,12 @@ const CHORD_SETS = {
     { deg: 'v', off: 7, q: 'm' },
     { deg: '♭VI', off: 8, q: '' },
     { deg: '♭VII', off: 10, q: '' },
-    { deg: 'V', off: 7, q: '' },
-    { deg: 'V7', off: 7, q: '7' },
     { deg: 'Vsus4', off: 7, q: 'sus4' },
-    { deg: 'ii°', off: 2, q: 'dim' },
-    { deg: 'IV', off: 5, q: '' },
-    { deg: 'I', off: 0, q: '' },
+    { deg: 'V7', off: 7, q: '7' },
+    { deg: 'V', off: 7, q: '' },
+    { deg: '♭VII7', off: 10, q: '7' },
+    { deg: '♭III7', off: 3, q: '7' },
+    { deg: 'I7', off: 0, q: '7' },
   ],
 };
 let CHORDS = CHORD_SETS.major;
