@@ -11,6 +11,9 @@ const HYMN_CATS = {
   tw: { label: '台語', score: HYMN_TW + 'tw/score/tw', text: HYMN_TW + 'tw/text/tw' },
 };
 
+const FU_OFFSET = 780; // 大本附1~附6 存成 db781~db786（同 hymn 詩歌本）
+let hasFu = false;
+const hymnLabel = (cat, num) => HYMN_CATS[cat].label + ' ' + (cat === 'db' && num > FU_OFFSET ? '附' + (num - FU_OFFSET) : num);
 let hymn = null; // 目前開啟的詩歌 {cat, num, title}
 let pickCat = 'db';
 let zoom = 1;
@@ -30,7 +33,7 @@ const LETTER = { C: 0, D: 2, E: 4, F: 5, G: 7, A: 9, B: 11 };
 function parseKey(text) {
   const lines = text.split(/\r?\n/).slice(0, 8);
   for (const line of lines) {
-    const m = line.trim().match(/^(降|升)?\s*([A-Ga-g])\s*([#♯b♭])?\s*([大小])[調调]\s*(\d+\s*\/\s*\d+)?/);
+    const m = line.trim().match(/(降|升)?\s*([A-Ga-g])\s*([#♯b♭])?\s*([大小])[調调]\s*(\d+\s*\/\s*\d+)?/);
     if (!m) continue;
     let pc = LETTER[m[2].toUpperCase()];
     if (m[1] === '降' || m[3] === 'b' || m[3] === '♭') pc -= 1;
@@ -39,7 +42,7 @@ function parseKey(text) {
       pc: (pc + 12) % 12,
       scale: m[4] === '小' ? 'minor' : 'major',
       meter: m[5] ? m[5].replace(/\s/g, '') : null,
-      label: line.trim(),
+      label: m[0].trim(),
     };
   }
   return null;
@@ -50,7 +53,7 @@ async function openHymn(cat, num) {
   hymn = { cat, num, title: '' };
   document.body.classList.add('score-mode');
   document.body.classList.remove('show-settings');
-  $('hymnTitle').textContent = c.label + ' ' + num;
+  $('hymnTitle').textContent = hymnLabel(cat, num);
   $('hymnMeta').textContent = '';
   closePicker();
   recent = [{ cat, num }].concat(recent.filter((r) => !(r.cat === cat && r.num === num))).slice(0, 8);
@@ -68,7 +71,7 @@ async function openHymn(cat, num) {
     }
   } catch (_) {}
   if (!hymn || hymn.cat !== cat || hymn.num !== num) return;
-  $('hymnTitle').textContent = c.label + ' ' + num + (hymn.title ? ' ' + hymn.title : '');
+  $('hymnTitle').textContent = hymnLabel(cat, num) + (hymn.title ? ' ' + hymn.title : '');
   applySong(info);
 }
 
@@ -145,29 +148,36 @@ function renderPicker() {
     const b = document.createElement('button');
     b.textContent = c.label;
     b.classList.toggle('on', k === pickCat);
-    b.onclick = () => { pickCat = k; renderPicker(); $('hymnNum').focus(); };
+    b.onclick = () => { pickCat = k; if (k !== 'db') hasFu = false; renderPicker(); $('hymnNum').focus(); };
     $('hymnCats').appendChild(b);
   });
   $('hymnRecent').innerHTML = '';
   recent.forEach((r) => {
     const b = document.createElement('button');
-    b.textContent = HYMN_CATS[r.cat].label + ' ' + r.num;
+    b.textContent = hymnLabel(r.cat, r.num);
     b.onclick = () => openHymn(r.cat, r.num);
     $('hymnRecent').appendChild(b);
   });
+  $('hymnFu').style.display = pickCat === 'db' ? '' : 'none';
+  $('hymnFu').classList.toggle('on', hasFu);
+  $('hymnNum').placeholder = hasFu ? '附詩歌 1～6' : '輸入詩歌編號';
   $('hymnRecentWrap').style.display = recent.length ? '' : 'none';
 }
 
 function submitPicker() {
   const n = parseInt($('hymnNum').value, 10);
   if (!n || n < 1) { $('hymnNum').focus(); return; }
+  const fu = hasFu && pickCat === 'db';
+  if (fu && n > 6) { alert('大本附詩歌編號為 1 至 6'); return; }
   $('hymnNum').value = '';
-  openHymn(pickCat, n);
+  hasFu = false;
+  openHymn(pickCat, fu ? FU_OFFSET + n : n);
 }
 
 $('hymnBtn').addEventListener('click', openPicker);
 $('hymnPickerClose').addEventListener('click', closePicker);
 $('hymnGo').addEventListener('click', submitPicker);
+$('hymnFu').addEventListener('click', () => { hasFu = !hasFu; renderPicker(); $('hymnNum').focus(); });
 $('hymnNum').addEventListener('keydown', (e) => { if (e.key === 'Enter') submitPicker(); });
 $('hymnPicker').addEventListener('click', (e) => { if (e.target.id === 'hymnPicker') closePicker(); });
 $('hymnClose').addEventListener('click', closeHymn);
