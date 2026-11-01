@@ -9,15 +9,17 @@ const OCR_PC = { C: 0, D: 2, E: 4, F: 5, G: 7, A: 9, B: 11 };
 
 function isPink(r, g, b) { return r > 120 && r - g > 45 && b - g > 15 && r >= b - 30; }
 
-function loadImageData(url) {
+// maxW：比這寬的圖先縮小（匯入的圖片常比詩歌本的大，和弦字才會落在可辨識的大小）
+function loadImageData(url, maxW) {
   return new Promise((resolve, reject) => {
     const img = new Image();
     img.crossOrigin = 'anonymous';
     img.onload = () => {
+      const k = maxW && img.naturalWidth > maxW ? maxW / img.naturalWidth : 1;
       const c = document.createElement('canvas');
-      c.width = img.naturalWidth; c.height = img.naturalHeight;
+      c.width = Math.round(img.naturalWidth * k); c.height = Math.round(img.naturalHeight * k);
       const g = c.getContext('2d', { willReadFrequently: true });
-      g.drawImage(img, 0, 0);
+      g.drawImage(img, 0, 0, c.width, c.height);
       try { resolve(g.getImageData(0, 0, c.width, c.height)); } catch (e) { reject(e); }
     };
     img.onerror = reject;
@@ -181,9 +183,9 @@ function bestKey(seq, scale, orig) {
 }
 
 // 回傳 {key: 0~11, scale}；scale 沒給（譜上沒標大小調）就自己判斷；讀不到回傳 null
-async function detectChordKey(url, scale, orig) {
+async function detectChordKey(url, scale, orig, maxW) {
   try {
-    const data = await loadImageData(url);
+    const data = await loadImageData(url, maxW);
     const seq = readChords(data);
     if (seq.length < 3) return null;
     if (scale) return { key: bestKey(seq, scale, orig)[0], scale };

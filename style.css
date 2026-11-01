@@ -105,6 +105,7 @@ input[type=range] { width: 100%; accent-color: var(--accent); }
 
 @media (min-width: 560px) {
   .pad { grid-template-columns: repeat(6, 1fr); }
+  .pad.n15 { grid-template-columns: repeat(5, 1fr); }
 }
 
 .tempo.keyshift { grid-template-columns: 1fr 1.3fr 1fr; }
@@ -172,6 +173,7 @@ body.score-mode .pitch-head { display: none; }
 body.score-mode .solfege button { padding: 7px 0 2px; }
 body.score-mode .solfege button .n { font-size: 16px; }
 body.score-mode .pad { flex: none; gap: 5px; grid-template-columns: repeat(6, 1fr); }
+body.score-mode .pad.n15 { grid-template-columns: repeat(5, 1fr); }
 body.score-mode .pad button { min-height: 48px; padding: 5px 1px; }
 body.score-mode .pad button .n { font-size: 18px; }
 body.score-mode .pad button .d { font-size: 10px; }
@@ -183,7 +185,7 @@ body.score-mode .play { height: 46px; font-size: 18px; }
 .picker-box { background: var(--panel); border-radius: 16px; padding: 14px; width: 100%; max-width: 480px; display: grid; gap: 12px; }
 .picker-head { display: flex; justify-content: space-between; align-items: center; font-size: 18px; }
 .picker-head button { border: 0; background: var(--panel2); border-radius: 8px; padding: 6px 10px; }
-.seg.wrap.picker-cats { grid-template-columns: repeat(3, 1fr); width: 100%; }
+.seg.wrap.picker-cats { width: 100%; }
 .picker-input { display: flex; gap: 8px; }
 .picker-input input { flex: 1; min-width: 0; }
 .picker-input .fu { background: var(--panel2); color: var(--text); padding: 0 16px; }
@@ -195,3 +197,10 @@ body.score-mode .play { height: 46px; font-size: 18px; }
 .picker-recent button { border: 0; border-radius: 8px; background: var(--panel2); padding: 6px 10px; }
 .score-page { position: relative; width: 100%; }
 .score-page img { width: 100% !important; }
+.seg.wrap.picker-cats { grid-template-columns: repeat(4, 1fr); }
+#myWrap { display: grid; gap: 8px; }
+.my-import { border: 0; border-radius: 10px; background: var(--accent); color: #1b1408; font-weight: 800; padding: 12px; font-size: 17px; }
+.my-list { display: grid; gap: 6px; max-height: 40vh; overflow: auto; }
+.my-row { display: flex; gap: 6px; }
+.my-open { flex: 1; text-align: left; border: 0; border-radius: 8px; background: var(--panel2); padding: 10px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.my-del { border: 0; border-radius: 8px; background: #3a2526; color: #ffb3b0; padding: 0 12px; }

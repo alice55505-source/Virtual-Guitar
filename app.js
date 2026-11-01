@@ -62,6 +62,9 @@ const CHORD_SETS = {
     { deg: 'II', off: 2, q: '' },
     { deg: 'I7', off: 0, q: '7' },
     { deg: 'VI', off: 9, q: '' },
+    { deg: 'II7', off: 2, q: '7' },
+    { deg: 'III7', off: 4, q: '7' },
+    { deg: 'VI7', off: 9, q: '7' },
   ],
   minor: [
     { deg: 'i', off: 0, q: 'm' },
@@ -548,6 +551,7 @@ function buildPad() {
     pad.appendChild(b);
     return b;
   });
+  pad.classList.toggle('n15', CHORDS.length === 15); // 15 個：看譜時排成 5×3
   padFor = CHORDS;
 }
 

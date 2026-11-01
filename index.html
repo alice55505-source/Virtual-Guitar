@@ -107,10 +107,16 @@
         <button id="hymnPickerClose" aria-label="關閉">✕</button>
       </div>
       <div id="hymnCats" class="seg wrap picker-cats"></div>
-      <div class="picker-input">
+      <div class="picker-input" id="pickerNum">
         <button id="hymnFu" class="fu">附</button>
         <input id="hymnNum" type="number" inputmode="numeric" min="1" placeholder="輸入詩歌編號">
         <button id="hymnGo">開啟</button>
+      </div>
+      <div id="myWrap" style="display:none">
+        <button id="myImport" class="my-import">＋ 匯入樂譜圖片</button>
+        <input id="myFile" type="file" accept="image/*" multiple hidden>
+        <div class="picker-note">一次選多張 = 同一首的多頁。圖片只存在這支手機。</div>
+        <div id="myList" class="my-list"></div>
       </div>
       <div id="hymnRecentWrap">
         <div class="picker-label">最近</div>
@@ -124,6 +130,7 @@
   <script src="hymn-s2t.js"></script>
   <script src="chord-templates.js"></script>
   <script src="chord-ocr.js"></script>
+  <script src="my-songs.js"></script>
   <script src="hymn.js"></script>
 </body>
 </html>

@@ -9,12 +9,14 @@ const HYMN_CATS = {
   xb: { label: '新頌', score: HYMN_REMOTE + 'lyrics_xb_score/xb', text: HYMN_REMOTE + 'lyrics_xb_text/xb' },
   er: { label: '兒詩', score: HYMN_REMOTE + 'lyrics_er_score/', text: HYMN_REMOTE + 'lyrics_er_text/er' },
   tw: { label: '台語', score: HYMN_TW + 'tw/score/tw', text: HYMN_TW + 'tw/text/tw' },
+  my: { label: '我的' }, // 自己匯入的圖片（my-songs.js）
 };
 
 const OCR_CATS = { db: true, bb: true, xb: true }; // 這幾本的樂譜和弦字型可辨識
 const FU_OFFSET = 780; // 大本附1~附6 存成 db781~db786（同 hymn 詩歌本）
 let hasFu = false;
-const hymnLabel = (cat, num) => HYMN_CATS[cat].label + ' ' + (cat === 'db' && num > FU_OFFSET ? '附' + (num - FU_OFFSET) : num);
+const hymnLabel = (cat, num) => cat === 'my' ? (myName(num) || '我的詩歌')
+  : HYMN_CATS[cat].label + ' ' + (cat === 'db' && num > FU_OFFSET ? '附' + (num - FU_OFFSET) : num);
 let hymn = null; // 目前開啟的詩歌 {cat, num, title}
 let pickCat = 'db';
 const songPrefs = (() => { try { return JSON.parse(localStorage.getItem('vg-songs') || '{}'); } catch (_) { return {}; } })();
@@ -24,7 +26,10 @@ const saveSongs = () => { try { localStorage.setItem('vg-songs', JSON.stringify(
 // 每首歌記住自己的升降 Key、速度、刷法
 window.onSave = () => {
   if (!hymn) return;
-  songPrefs[hymn.cat + hymn.num] = { shift: state.shift, bpm: state.bpm, pattern: state.pattern };
+  const p = { shift: state.shift, bpm: state.bpm, pattern: state.pattern };
+  // 匯入的圖片沒有調號資料，連調、大小調、拍號一起記
+  if (hymn.cat === 'my') Object.assign(p, { sheet: state.sheet, scale: state.scale, meter: state.meter });
+  songPrefs[hymn.cat + hymn.num] = p;
   saveSongs();
 };
 
@@ -59,6 +64,7 @@ async function openHymn(cat, num) {
   closePicker();
   recent = [{ cat, num }].concat(recent.filter((r) => !(r.cat === cat && r.num === num))).slice(0, 8);
   saveSongs();
+  if (cat === 'my') { openMySong(num); return; }
   loadScore(cat, num);
 
   let info = null;
@@ -106,6 +112,13 @@ function applySong(info, chordKey) {
   } else {
     meta = '譜上沒標調，請手動設定';
   }
+  if (hymn.cat === 'my') {
+    if (pref.sheet !== undefined) {
+      state.scale = pref.scale; CHORDS = CHORD_SETS[state.scale]; state.sheet = pref.sheet;
+      if (pref.meter && METERS[pref.meter]) state.meter = pref.meter;
+      meta = keyTable()[state.sheet][0] + ' 調 ' + state.meter;
+    } else if (!chordKey) meta = '請按 ⚙ 設定選調和拍號（會記住）';
+  }
   state.shift = pref.shift || 0;
   if (pref.bpm) state.bpm = pref.bpm;
   if (pref.pattern) state.pattern = pref.pattern;
@@ -141,13 +154,51 @@ async function loadScore(cat, num) {
   box.scrollTop = 0;
 }
 
+// 匯入的詩歌：圖片從手機裡讀出來
+let myUrls = [];
+async function openMySong(id) {
+  const box = $('scoreScroll');
+  myUrls.forEach((u) => URL.revokeObjectURL(u));
+  myUrls = [];
+  box.innerHTML = '<div class="score-msg">載入中…</div>';
+  let rec = null;
+  try { rec = await myGet(id); } catch (_) {}
+  if (!hymn || hymn.cat !== 'my' || hymn.num !== id) return;
+  if (!rec) { box.innerHTML = '<div class="score-msg">找不到這首（可能已刪除）</div>'; return; }
+  $('hymnTitle').textContent = rec.name;
+  box.innerHTML = '';
+  myUrls = rec.images.map((b) => URL.createObjectURL(b));
+  myUrls.forEach((src, k) => {
+    const wrap = document.createElement('div');
+    wrap.className = 'score-page';
+    const img = new Image();
+    img.alt = '樂譜 ' + (k + 1);
+    img.src = src;
+    wrap.appendChild(img);
+    box.appendChild(wrap);
+  });
+  box.scrollTop = 0;
+  // 沒存過設定：試著從圖上的洋紅色和弦判斷調（詩歌本截圖可以，一般照片通常讀不到）
+  let chordKey = null;
+  const pref = songPrefs['my' + id] || {};
+  if (pref.sheet === undefined && myUrls[0]) {
+    $('hymnMeta').textContent = '讀取樂譜和弦中…';
+    chordKey = await detectChordKey(myUrls[0], null, null, 800);
+    if (!hymn || hymn.cat !== 'my' || hymn.num !== id) return;
+  }
+  applySong(null, chordKey);
+}
+
 // 上一首／下一首：台語詩歌編號不連續，照目錄跳；其他詩本 ±1（大本 780 之後是附1~附6）
 let twList = null;
 async function stepHymn(dir) {
   if (!hymn) return;
   const { cat, num } = hymn;
   let next = null;
-  if (cat === 'tw') {
+  if (cat === 'my') {
+    const k = myList.findIndex((m) => m.id === num);
+    next = k >= 0 && myList[k + dir] ? myList[k + dir].id : null;
+  } else if (cat === 'tw') {
     if (!twList) {
       try {
         const t = await (await fetch(HYMN_TW + 'tw/toc.txt')).text();
@@ -160,7 +211,7 @@ async function stepHymn(dir) {
     next = num + dir;
     if (cat === 'db' && next > FU_OFFSET + 6) next = null;
   }
-  if (next && next >= 1) openHymn(cat, next);
+  if (next !== null && next !== undefined && next >= 1) openHymn(cat, next);
 }
 
 function closeHymn() {
@@ -174,7 +225,7 @@ function closeHymn() {
 function openPicker() {
   $('hymnPicker').classList.remove('hidden');
   renderPicker();
-  setTimeout(() => $('hymnNum').focus(), 50);
+  if (pickCat !== 'my') setTimeout(() => $('hymnNum').focus(), 50);
 }
 function closePicker() { $('hymnPicker').classList.add('hidden'); }
 
@@ -184,7 +235,7 @@ function renderPicker() {
     const b = document.createElement('button');
     b.textContent = c.label;
     b.classList.toggle('on', k === pickCat);
-    b.onclick = () => { pickCat = k; if (k !== 'db') hasFu = false; renderPicker(); $('hymnNum').focus(); };
+    b.onclick = () => { pickCat = k; if (k !== 'db') hasFu = false; renderPicker(); if (k !== 'my') $('hymnNum').focus(); };
     $('hymnCats').appendChild(b);
   });
   $('hymnRecent').innerHTML = '';
@@ -194,10 +245,43 @@ function renderPicker() {
     b.onclick = () => openHymn(r.cat, r.num);
     $('hymnRecent').appendChild(b);
   });
+  // 我的：列出匯入的詩歌，可開啟、刪除、匯入新的
+  const my = pickCat === 'my';
+  $('pickerNum').style.display = my ? 'none' : '';
+  $('myWrap').style.display = my ? '' : 'none';
+  if (my) renderMyList();
   $('hymnFu').style.display = pickCat === 'db' ? '' : 'none';
   $('hymnFu').classList.toggle('on', hasFu);
   $('hymnNum').placeholder = hasFu ? '附詩歌 1～6' : '輸入詩歌編號';
   $('hymnRecentWrap').style.display = recent.length ? '' : 'none';
+}
+
+function renderMyList() {
+  const box = $('myList');
+  box.innerHTML = myList.length ? '' : '<div class="picker-note">還沒有匯入的詩歌</div>';
+  myList.forEach((m) => {
+    const row = document.createElement('div');
+    row.className = 'my-row';
+    const open = document.createElement('button');
+    open.className = 'my-open';
+    open.textContent = m.name;
+    open.onclick = () => openHymn('my', m.id);
+    const del = document.createElement('button');
+    del.className = 'my-del';
+    del.textContent = '刪除';
+    del.onclick = async () => {
+      if (!confirm('刪除「' + m.name + '」？')) return;
+      await myDelete(m.id);
+      delete songPrefs['my' + m.id];
+      recent = recent.filter((r) => !(r.cat === 'my' && r.num === m.id));
+      saveSongs();
+      await myRefresh();
+      if (hymn && hymn.cat === 'my' && hymn.num === m.id) closeHymn();
+      renderPicker();
+    };
+    row.append(open, del);
+    box.appendChild(row);
+  });
 }
 
 function submitPicker() {
@@ -211,6 +295,15 @@ function submitPicker() {
 }
 
 $('hymnBtn').addEventListener('click', openPicker);
+$('myImport').addEventListener('click', () => $('myFile').click());
+$('myFile').addEventListener('change', async (e) => {
+  const files = e.target.files;
+  if (!files || !files.length) return;
+  const id = await myImport(files);
+  e.target.value = '';
+  if (id) openHymn('my', id);
+});
+myRefresh().then(() => { if (!$('hymnPicker').classList.contains('hidden')) renderPicker(); });
 $('hymnPickerClose').addEventListener('click', closePicker);
 $('hymnGo').addEventListener('click', submitPicker);
 $('hymnFu').addEventListener('click', () => { hasFu = !hasFu; renderPicker(); $('hymnNum').focus(); });
