@@ -21,7 +21,28 @@ const QUALITY = {
   '7': [0, 4, 7, 10],
   sus4: [0, 5, 7],
   dim: [0, 3, 6],
+  maj7: [0, 4, 7, 11],
+  m7: [0, 3, 7, 10],
+  m7b5: [0, 3, 6, 10],
+  sus2: [0, 2, 7],
+  '7sus4': [0, 5, 7, 10],
 };
+const SUFFIX = { m7b5: 'm7♭5' };
+
+// 和弦變化選項：原和弦 / 7 / maj7 / sus2 / sus4
+const MODS = [
+  ['', '原和弦'], ['7', '7'], ['maj7', 'maj7'], ['sus2', 'sus2'], ['sus4', 'sus4'],
+];
+const MOD_MAP = {
+  '7': { '': '7', m: 'm7', dim: 'm7b5', sus4: '7sus4' },
+  maj7: { '': 'maj7', m: 'm7', dim: 'm7b5' },
+  sus2: { '': 'sus2', m: 'sus2' },
+  sus4: { '': 'sus4', m: 'sus4', '7': '7sus4' },
+};
+function quality(ch) {
+  const base = CHORDS[ch.i].q;
+  return (ch.mod && MOD_MAP[ch.mod][base]) || base;
+}
 
 // 和弦鍵：級數、相對主音的半音、性質
 const CHORD_SETS = {
@@ -73,6 +94,7 @@ const state = {
   mode: 'abs',
   key: 0,
   scale: 'major',
+  mod: '',
   meter: '4/4',
   bpm: 80,
   pattern: 'strum',
@@ -82,24 +104,27 @@ try { Object.assign(state, JSON.parse(localStorage.getItem('vg-settings') || '{}
 if (!METERS[state.meter]) state.meter = '4/4';
 if (!CHORD_SETS[state.scale]) state.scale = 'major';
 CHORDS = CHORD_SETS[state.scale];
+if (!MODS.some((m) => m[0] === state.mod)) state.mod = '';
 const save = () => { try { localStorage.setItem('vg-settings', JSON.stringify(state)); } catch (_) {} };
 
-let current = null;   // 正在彈的和弦 index
-let pending = null;   // 等下一小節的和弦 index
+let current = null;   // 正在彈的和弦 {i, mod}
+let pending = null;   // 等下一小節的和弦 {i, mod}
+const same = (a, b) => !!a && !!b && a.i === b.i && a.mod === b.mod;
 let playing = false;
 
 /* ========== 和弦名稱 / 音高 ========== */
-function chordName(i, transpose) {
-  const c = CHORDS[i];
+function chordName(ch, transpose) {
+  const c = CHORDS[ch.i];
   const k = keyTable()[transpose ? state.key : REF[state.scale]];
-  return k[2][(k[1] + c.off) % 12] + c.q;
+  const q = quality(ch);
+  return k[2][(k[1] + c.off) % 12] + (SUFFIX[q] || q);
 }
-function rootPc(i) { return (state.key + CHORDS[i].off) % 12; }
+function rootPc(ch) { return (state.key + CHORDS[ch.i].off) % 12; }
 
 // 產生 6 弦的 MIDI 音高：低音根音在 E2~D#3，往上依序疊和弦音（間隔 ≥3 半音，像吉他弦距）
-function voicing(i) {
-  const pc = rootPc(i);
-  const iv = QUALITY[CHORDS[i].q];
+function voicing(ch) {
+  const pc = rootPc(ch);
+  const iv = QUALITY[quality(ch)];
   const set = new Set(iv.map((x) => (x + pc) % 12));
   let bass = 40 + ((pc - 4 + 12) % 12);
   const notes = [bass];
@@ -108,6 +133,17 @@ function voicing(i) {
     n++;
     if (set.has(n % 12) && n - notes[notes.length - 1] >= 3) notes.push(n);
   }
+  // 確保每個和弦音都有：缺的音替換掉重複的音（不動低音）
+  for (const pcNeed of set) {
+    if (notes.some((x) => x % 12 === pcNeed)) continue;
+    for (let k = notes.length - 1; k >= 1; k--) {
+      const cnt = notes.filter((x) => x % 12 === notes[k] % 12).length;
+      if (cnt < 2) continue;
+      const cand = [1, -1, 2, -2, 3, -3].map((d) => notes[k] + d).find((x) => x % 12 === pcNeed);
+      if (cand !== undefined) { notes[k] = cand; break; }
+    }
+  }
+  notes.sort((x, y) => x - y);
   return notes;
 }
 
@@ -219,7 +255,7 @@ function scheduleStep(i, t) {
   if (chord === null) return;
 
   const notes = voicing(chord);
-  if (lastChord !== chord) {
+  if (!same(lastChord, chord)) {
     for (let s = 0; s < 6; s++) muteString(s, t);
     lastChord = chord;
   }
@@ -257,7 +293,7 @@ function scheduler() {
 function start() {
   initAudio();
   if (ctx.state === 'suspended') ctx.resume();
-  if (current === null) current = 0;
+  if (current === null) current = { i: 0, mod: state.mod };
   pending = null;
   step = 0;
   lastChord = null;
@@ -318,16 +354,28 @@ const padButtons = CHORDS.map((c, i) => {
 });
 
 function pressChord(i) {
+  const ch = { i, mod: state.mod };
   if (!playing) {
-    current = i;
+    current = ch;
     start();
     return;
   }
-  if (i === current && pending === null) return;
-  if (state.change === 'bar') pending = i === current ? null : i;
-  else { current = i; pending = null; }
+  if (same(ch, current) && pending === null) return;
+  if (state.change === 'bar') pending = same(ch, current) ? null : ch;
+  else { current = ch; pending = null; }
   render();
 }
+
+const modSeg = $('modSeg');
+MODS.forEach(([v, label]) => {
+  const b = document.createElement('button');
+  b.textContent = label; b.dataset.mod = v;
+  modSeg.appendChild(b);
+});
+modSeg.addEventListener('click', (e) => {
+  const b = e.target.closest('button'); if (!b) return;
+  state.mod = b.dataset.mod; save(); render();
+});
 
 function buildSteps() {
   const m = METERS[state.meter];
@@ -357,6 +405,7 @@ function render() {
   document.querySelectorAll('#meterSeg button').forEach((b) => b.classList.toggle('on', b.dataset.meter === state.meter));
   keySel.value = state.key;
   scaleSel.value = state.scale;
+  modSeg.querySelectorAll('button').forEach((b) => b.classList.toggle('on', b.dataset.mod === state.mod));
   patternSel.value = state.pattern;
   changeSel.value = state.change;
   bpm.value = state.bpm;
@@ -365,10 +414,11 @@ function render() {
 
   const abs = state.mode === 'abs';
   padButtons.forEach((b, i) => {
-    b.querySelector('.n').textContent = chordName(i, abs);
-    b.querySelector('.d').textContent = CHORDS[i].deg + (abs ? '' : '  (' + chordName(i, true) + ')');
-    b.classList.toggle('on', i === current && playing);
-    b.classList.toggle('pending', i === pending);
+    const ch = { i, mod: state.mod };
+    b.querySelector('.n').textContent = chordName(ch, abs);
+    b.querySelector('.d').textContent = CHORDS[i].deg + (abs ? '' : '  (' + chordName(ch, true) + ')');
+    b.classList.toggle('on', playing && !!current && current.i === i);
+    b.classList.toggle('pending', !!pending && pending.i === i);
   });
 
   const show = pending !== null ? pending : current;
@@ -427,6 +477,7 @@ $('meterSeg').addEventListener('click', (e) => {
 scaleSel.addEventListener('change', () => {
   state.scale = scaleSel.value;
   CHORDS = CHORD_SETS[state.scale];
+if (!MODS.some((m) => m[0] === state.mod)) state.mod = '';
   save(); buildKeys(); lastChord = null; render();
 });
 keySel.addEventListener('change', () => { state.key = +keySel.value; save(); lastChord = null; render(); });
