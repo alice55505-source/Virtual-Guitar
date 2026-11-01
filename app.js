@@ -717,7 +717,6 @@ $('tap').addEventListener('pointerdown', (e) => {
     const gaps = taps.slice(1).map((t, i) => t - taps[i]);
     const avg = gaps.reduce((a, b) => a + b, 0) / gaps.length;
     setBpm(60000 / avg);
-    if (ctx && window.alignMelodyBeat) alignMelodyBeat(ctx.currentTime);
   }
 });
 

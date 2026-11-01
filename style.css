@@ -195,5 +195,3 @@ body.score-mode .play { height: 46px; font-size: 18px; }
 .picker-recent button { border: 0; border-radius: 8px; background: var(--panel2); padding: 6px 10px; }
 .score-page { position: relative; width: 100%; }
 .score-page img { width: 100% !important; }
-.score-head .melody-btn { background: var(--accent); color: #1b1408; font-weight: 800; }
-.score-head .melody-btn.on { background: #d9534f; color: #fff; }
