@@ -87,7 +87,8 @@ const METERS = {
   '4/4': { spb: 2, beats: 4, strum: 'B-DU-UDU', arp: '1456-454', unit: '四分音符' },
   '3/4': { spb: 2, beats: 3, strum: 'B-DUDU', arp: '145654', unit: '四分音符' },
   '2/4': { spb: 2, beats: 2, strum: 'B-DU', arp: '1454', unit: '四分音符' },
-  '6/8': { spb: 3, beats: 2, strum: 'B-DUDU', arp: '145654', unit: '附點四分音符' },
+  // 6/8：蹦恰恰 蹦恰恰（蹦 = 根，恰 = 下上），用十六分音符格
+  '6/8': { spb: 6, beats: 2, strum: 'B-DUDUB-DUDU', arp: '1-4-5-6-5-4-', unit: '附點四分音符' },
   '3/2': { spb: 4, beats: 3, strum: 'B-DUD-DUD-DU', arp: '145464546454', unit: '二分音符' },
   '2/2': { spb: 4, beats: 2, strum: 'B-DUD-DU', arp: '14546454', unit: '二分音符' },
   '9/8': { spb: 3, beats: 3, strum: 'BDUDDUDDU', arp: '145654654', unit: '附點四分音符' },
@@ -589,6 +590,7 @@ function buildSteps() {
   }
   stepsEl.innerHTML = '';
   const total = m.strum.length;
+  stepsEl.classList.toggle('dense', total > 8);
   for (let i = 0; i < total; i++) {
     const s = document.createElement('span');
     let c = '';
