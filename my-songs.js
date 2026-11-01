@@ -60,6 +60,8 @@ async function myImport(files) {
   const images = [];
   for (const f of files) images.push(await shrinkImage(f));
   const id = Date.now();
+  // 請瀏覽器把資料標成「保留」，空間不足時才不會被自動清掉
+  try { if (navigator.storage && navigator.storage.persist) await navigator.storage.persist(); } catch (_) {}
   await myReq('readwrite', (s) => s.put({ id, name, images }));
   await myRefresh();
   return id;
