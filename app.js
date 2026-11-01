@@ -79,13 +79,13 @@ const keyTable = () => (state.scale === 'minor' ? MINOR_KEYS : MAJOR_KEYS);
 // 拍號：每拍幾個步（八分音符）、幾拍、刷法（B 根：刷低音 3 條弦 / D 下刷 / U 上刷 / - 空）、
 // 分解和弦（弦號：最低音弦算 1，1 = 根音，- = 停）、拍子單位
 const METERS = {
-  '4/4': { spb: 2, beats: 4, strum: 'D-DU-UDU', arp: '1456-454', unit: '♩' },
-  '3/4': { spb: 2, beats: 3, strum: 'D-DUDU', arp: '145654', unit: '♩' },
+  '4/4': { spb: 2, beats: 4, strum: 'B-DU-UDU', arp: '1456-454', unit: '♩' },
+  '3/4': { spb: 2, beats: 3, strum: 'B-DUDU', arp: '145654', unit: '♩' },
   '6/8': { spb: 3, beats: 2, strum: 'B-DUDU', arp: '145654', unit: '♩.' },
-  '3/2': { spb: 4, beats: 3, strum: 'D-DU-UDUD-DU', arp: '145464546454', unit: '𝅗𝅥' },
-  '2/2': { spb: 4, beats: 2, strum: 'D-DU-UDU', arp: '14546454', unit: '𝅗𝅥' },
-  '9/8': { spb: 3, beats: 3, strum: 'DDUDDUDDU', arp: '145654654', unit: '♩.' },
-  '6/4': { spb: 2, beats: 6, strum: 'D-DUDUD-DUDU', arp: '145654145654', unit: '♩' },
+  '3/2': { spb: 4, beats: 3, strum: 'B-DU-UDUD-DU', arp: '145464546454', unit: '𝅗𝅥' },
+  '2/2': { spb: 4, beats: 2, strum: 'B-DU-UDU', arp: '14546454', unit: '𝅗𝅥' },
+  '9/8': { spb: 3, beats: 3, strum: 'BDUDDUDDU', arp: '145654654', unit: '♩.' },
+  '6/4': { spb: 2, beats: 6, strum: 'B-DUDUD-DUDU', arp: '145654145654', unit: '♩' },
 };
 
 /* ========== 狀態 ========== */
@@ -345,6 +345,12 @@ function changeNow() {
   scheduler();
 }
 
+// 小節第一下：只刷低音 3 條弦（根音最重）
+function strumLow(notes, t, dur) {
+  const span = Math.min(0.03, dur * 0.3);
+  for (let s = 0; s < 3; s++) playString(s, notes[s], t + (span * s) / 2, s === 0 ? 1.3 : 0.9);
+}
+
 function scheduleStep(i, t) {
   const m = METERS[state.meter];
   const dur = stepDur();
@@ -366,6 +372,7 @@ function scheduleStep(i, t) {
     // 換和弦的那一拍一定從根音完整下刷（就算刷法這一格是空拍）
     if (t >= quietUntil) {
       if (state.pattern === 'arp') playString(0, notes[0], t, 1);
+      else if (i === 0) strumLow(notes, t, dur);
       else strum(notes, t, 'D', Math.max(accent, 0.9), dur, true);
     }
     return;
@@ -374,14 +381,11 @@ function scheduleStep(i, t) {
 
   if (state.pattern === 'strum') {
     const c = m.strum[i];
-    if (c === 'B') {
-      // 根：只刷低音 3 條弦（根音最重）
-      const span = Math.min(0.03, dur * 0.3);
-      for (let s = 0; s < 3; s++) playString(s, notes[s], t + (span * s) / 2, s === 0 ? 1.3 : 0.9);
-    }
+    if (c === 'B') strumLow(notes, t, dur);
     else if (c === 'D' || c === 'U') strum(notes, t, c, accent, dur, isBeat);
   } else if (state.pattern === 'beat') {
-    if (isBeat) strum(notes, t, 'D', accent, dur);
+    if (i === 0) strumLow(notes, t, dur);
+    else if (isBeat) strum(notes, t, 'D', accent, dur);
   } else {
     // 分解和弦：照拍號的弦號順序（4/4：根音 4 5 4 6 4 5 4）
     if (m.arp[i] === '-') return;
@@ -562,7 +566,7 @@ function buildSteps() {
     const s = document.createElement('span');
     let c = '';
     if (state.pattern === 'strum') c = { B: '根', D: '↓', U: '↑' }[m.strum[i]] || '·';
-    else if (state.pattern === 'beat') c = i % m.spb === 0 ? '↓' : '·';
+    else if (state.pattern === 'beat') c = i === 0 ? '根' : i % m.spb === 0 ? '↓' : '·';
     else c = m.arp[i] === '1' ? '根' : m.arp[i] === '-' ? '·' : m.arp[i];
     s.textContent = c;
     if (i % m.spb === 0) s.classList.add('beat');
