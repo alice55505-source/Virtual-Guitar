@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+  <meta name="theme-color" content="#1b1d24">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="吉他伴奏">
+  <title>吉他伴奏</title>
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="icons/icon-192.png">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="top">
+    <h1>吉他伴奏</h1>
+    <div class="seg" id="modeSeg" role="group" aria-label="顯示模式">
+      <button data-mode="abs">絕對音準</button>
+      <button data-mode="rel">相對音準 (C)</button>
+    </div>
+  </header>
+
+  <section class="controls">
+    <div class="row">
+      <label class="field">
+        <span>調</span>
+        <select id="keySel"></select>
+      </label>
+      <label class="field">
+        <span>刷法</span>
+        <select id="patternSel">
+          <option value="strum">節奏刷</option>
+          <option value="beat">每拍一下</option>
+          <option value="arp">分解和弦</option>
+        </select>
+      </label>
+      <label class="field">
+        <span>換和弦</span>
+        <select id="changeSel">
+          <option value="now">立即</option>
+          <option value="bar">下一小節</option>
+        </select>
+      </label>
+    </div>
+
+    <div class="field">
+      <span>拍號</span>
+      <div class="seg wrap" id="meterSeg"></div>
+    </div>
+
+    <div class="field">
+      <span>速度 <b id="bpmUnit">♩</b> = <b id="bpmVal">80</b></span>
+      <div class="tempo">
+        <button id="bpmDown" aria-label="減速">−</button>
+        <input type="range" id="bpm" min="30" max="240" value="80">
+        <button id="bpmUp" aria-label="加速">＋</button>
+        <button id="tap" class="tap">Tap</button>
+      </div>
+    </div>
+  </section>
+
+  <section class="display">
+    <div class="now">
+      <div id="chordName" class="chord-name">—</div>
+      <div id="chordSub" class="chord-sub"></div>
+    </div>
+    <div id="beats" class="beats"></div>
+    <div id="steps" class="steps"></div>
+  </section>
+
+  <section id="pad" class="pad"></section>
+
+  <footer class="bottom">
+    <button id="playBtn" class="play">▶ 開始</button>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>

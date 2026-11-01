@@ -1,0 +1,104 @@
+:root {
+  --bg: #15171c;
+  --panel: #1f222a;
+  --panel2: #2a2e38;
+  --text: #f1ece4;
+  --muted: #9a9fab;
+  --accent: #e0913c;
+  --accent2: #ffd08a;
+  --on: #3fbf7f;
+}
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+html, body { margin: 0; background: var(--bg); color: var(--text); }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang TC", "Noto Sans TC", "Microsoft JhengHei", sans-serif;
+  max-width: 720px; margin: 0 auto;
+  padding: calc(env(safe-area-inset-top) + 8px) 12px calc(env(safe-area-inset-bottom) + 84px);
+  user-select: none; -webkit-user-select: none;
+}
+button, select, input { font: inherit; color: inherit; }
+button { cursor: pointer; touch-action: manipulation; }
+
+.top { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
+.top h1 { font-size: 20px; margin: 4px 0; }
+
+.seg { display: inline-flex; background: var(--panel); border-radius: 10px; padding: 3px; gap: 3px; }
+.seg.wrap { display: grid; grid-template-columns: repeat(7, 1fr); }
+.seg.wrap button { min-width: 0; padding: 8px 0; }
+.seg button {
+  border: 0; background: transparent; padding: 8px 12px; border-radius: 8px; color: var(--muted);
+  min-width: 48px;
+}
+.seg button.on { background: var(--accent); color: #1b1408; font-weight: 700; }
+
+.controls { display: grid; gap: 10px; margin: 10px 0; }
+.row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.field { display: grid; gap: 4px; }
+.field > span { font-size: 13px; color: var(--muted); }
+.field > span b { color: var(--text); }
+select {
+  background: var(--panel); border: 1px solid var(--panel2); border-radius: 10px;
+  padding: 9px 8px; width: 100%;
+}
+.tempo { display: grid; grid-template-columns: 44px 1fr 44px 64px; gap: 8px; align-items: center; }
+.tempo button {
+  height: 40px; border-radius: 10px; border: 0; background: var(--panel2); font-size: 20px;
+}
+.tempo .tap { font-size: 15px; background: var(--panel); border: 1px solid var(--panel2); }
+.tempo .tap.hit { background: var(--accent); color: #1b1408; }
+input[type=range] { width: 100%; accent-color: var(--accent); }
+
+.display {
+  background: var(--panel); border-radius: 14px; padding: 12px; margin: 8px 0 12px;
+  display: grid; gap: 10px;
+}
+.now { display: flex; flex-direction: column; align-items: center; gap: 6px; min-height: 92px; justify-content: center; }
+.chord-name { font-size: 64px; font-weight: 800; line-height: 1; letter-spacing: 1px; }
+.chord-name.pending { animation: blink .6s step-end infinite; color: var(--accent2); }
+@keyframes blink { 50% { opacity: .35; } }
+.chord-sub { font-size: 14px; color: var(--muted); text-align: center; }
+
+.beats { display: flex; justify-content: center; gap: 10px; }
+.beats i {
+  width: 16px; height: 16px; border-radius: 50%; background: var(--panel2); display: block;
+  transition: background .05s;
+}
+.beats i.on { background: var(--on); }
+.beats i.on.first { background: var(--accent); }
+
+.steps { display: flex; justify-content: center; gap: 4px; flex-wrap: wrap; }
+.steps span {
+  width: 26px; height: 30px; display: grid; place-items: center; border-radius: 6px;
+  background: var(--bg); color: var(--muted); font-size: 16px;
+}
+.steps span.beat { border-bottom: 2px solid var(--panel2); }
+.steps span.on { background: var(--accent2); color: #1b1408; }
+
+.pad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.pad button {
+  border: 0; border-radius: 14px; background: var(--panel2); padding: 14px 4px 10px;
+  display: grid; gap: 2px; min-height: 76px;
+}
+.pad button .n { font-size: 26px; font-weight: 700; }
+.pad button .d { font-size: 12px; color: var(--muted); }
+.pad button.diatonic { background: #2f3440; }
+.pad button.on { background: var(--accent); color: #1b1408; }
+.pad button.on .d { color: #3a2a12; }
+.pad button.pending { outline: 3px dashed var(--accent2); outline-offset: -3px; }
+.pad button:active { transform: scale(.97); }
+
+.bottom {
+  position: fixed; left: 0; right: 0; bottom: 0;
+  padding: 10px 12px calc(env(safe-area-inset-bottom) + 10px);
+  background: linear-gradient(to top, var(--bg) 70%, transparent);
+  display: flex; justify-content: center;
+}
+.play {
+  width: 100%; max-width: 696px; height: 56px; border: 0; border-radius: 14px;
+  background: var(--on); color: #08130d; font-size: 20px; font-weight: 800;
+}
+.play.stop { background: #d9534f; color: #fff; }
+
+@media (min-width: 560px) {
+  .pad { grid-template-columns: repeat(4, 1fr); }
+}
