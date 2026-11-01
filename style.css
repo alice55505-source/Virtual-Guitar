@@ -151,7 +151,7 @@ body.score-mode .score-pane {
 .hymn-meta { font-size: 12px; color: var(--accent2); }
 .score-head button { border: 0; border-radius: 8px; background: var(--panel2); padding: 6px 10px; flex: none; }
 .score-scroll { flex: 1; overflow: auto; -webkit-overflow-scrolling: touch; touch-action: pan-x pan-y; }
-.score-scroll img { display: block; width: var(--zoom, 100%); max-width: none; height: auto; }
+.score-scroll img { display: block; width: 100%; max-width: none; height: auto; }
 .score-msg { color: #555; padding: 24px; text-align: center; }
 
 /* 看譜時：設定收起來、下方控制區變精簡 */
@@ -188,3 +188,8 @@ body.score-mode .play { height: 46px; font-size: 18px; }
 .picker-label, .picker-note { font-size: 12px; color: var(--muted); }
 .picker-recent { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px; }
 .picker-recent button { border: 0; border-radius: 8px; background: var(--panel2); padding: 6px 10px; }
+.score-page { position: relative; width: var(--zoom, 100%); }
+.score-page img { width: 100% !important; }
+.bar-mark { position: absolute; background: rgba(255, 196, 0, .28); border: 2px solid rgba(230, 140, 0, .9); border-radius: 6px; pointer-events: none; }
+.score-head .auto-btn { background: var(--on); color: #08130d; font-weight: 800; }
+.score-head .auto-btn.on { background: #d9534f; color: #fff; }
