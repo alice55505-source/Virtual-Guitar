@@ -427,6 +427,56 @@ function stop() {
   drawBeat(-1);
 }
 
+/* ========== 起音：唱名鍵 + 定調 ========== */
+const SOLFEGE = [['Do', 0], ['Re', 2], ['Mi', 4], ['Fa', 5], ['Sol', 7], ['La', 9], ['Ti', 11]];
+// 首調唱名：大調 Do = 主音；小調用 La 小調（Do = 主音往上 3 個半音）
+function doPc() { return (state.key + (state.scale === 'minor' ? 3 : 0)) % 12; }
+// Do 放在好唱的音域：G3 ~ F#4
+function doMidi() { return 55 + ((doPc() - 7 + 12) % 12); }
+function noteName(pc) {
+  const names = keyTable()[state.key][2];
+  return names[pc % 12];
+}
+
+// 柔和的持續音（像風琴），方便對音
+function playTone(midi, t, len = 1.6) {
+  const f = 440 * Math.pow(2, (midi - 69) / 12);
+  const g = ctx.createGain();
+  g.gain.setValueAtTime(0, t);
+  g.gain.linearRampToValueAtTime(0.28, t + 0.03);
+  g.gain.setValueAtTime(0.28, t + len - 0.3);
+  g.gain.linearRampToValueAtTime(0, t + len);
+  g.connect(master);
+  [[1, 'triangle', 1], [2, 'sine', 0.25]].forEach(([mul, type, amp]) => {
+    const o = ctx.createOscillator();
+    const og = ctx.createGain();
+    o.type = type; o.frequency.value = f * mul; og.gain.value = amp;
+    o.connect(og); og.connect(g);
+    o.start(t); o.stop(t + len + 0.05);
+  });
+}
+
+function playSolfege(k) {
+  initAudio();
+  if (ctx.state === 'suspended') ctx.resume();
+  playTone(doMidi() + SOLFEGE[k][1], ctx.currentTime + 0.01);
+}
+
+// 定調：I → IV → V7 → I 各刷一下（每個和弦 2 拍），最後給 Do 音
+function playCadence() {
+  if (playing) stop();
+  initAudio();
+  if (ctx.state === 'suspended') ctx.resume();
+  const seq = state.scale === 'minor' ? [0, 2, 7, 0] : [0, 3, 7, 0];
+  const beat = 60 / state.bpm;
+  let t = ctx.currentTime + 0.08;
+  seq.forEach((i, n) => {
+    strum(voicing({ i, mod: '' }), t, 'D', n === 3 ? 1 : 0.9, beat, true);
+    t += beat * 2;
+  });
+  playTone(doMidi(), t - beat * 2 + 0.02, beat * 2 + 0.6);
+}
+
 /* ========== 螢幕常亮 ========== */
 let wakeLock = null;
 async function requestWakeLock() {
@@ -456,6 +506,15 @@ Object.keys(METERS).forEach((m) => {
   b.textContent = m; b.dataset.meter = m;
   $('meterSeg').appendChild(b);
 });
+
+const solButtons = SOLFEGE.map(([name], k) => {
+  const b = document.createElement('button');
+  b.innerHTML = '<span class="n">' + name + '</span><span class="d"></span>';
+  b.addEventListener('pointerdown', (e) => { e.preventDefault(); playSolfege(k); });
+  $('solfege').appendChild(b);
+  return b;
+});
+$('cadenceBtn').addEventListener('click', playCadence);
 
 const padButtons = CHORDS.map((c, i) => {
   const b = document.createElement('button');
@@ -529,6 +588,8 @@ function render() {
   const view = 'sheet';
   const sameAsAbs = state.shift === 0;
   const keyName = keyTable()[state.key][0];
+  solButtons.forEach((b, k) => { b.querySelector('.d').textContent = noteName(doPc() + SOLFEGE[k][1]); });
+  $('doLabel').textContent = 'Do = ' + noteName(doPc()) + (state.scale === 'minor' ? '（La = ' + keyName + '）' : '');
   shiftVal.innerHTML = state.shift === 0
     ? '原調 <small>' + keyName + '</small>'
     : (state.shift > 0 ? '升 ' : '降 ') + Math.abs(state.shift) + ' <small>' + keyName + ' 調</small>';
