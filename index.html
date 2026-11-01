@@ -18,15 +18,20 @@
   <header class="top">
     <h1>吉他伴奏</h1>
     <div class="seg" id="modeSeg" role="group" aria-label="顯示模式">
-      <button data-mode="abs">絕對音準</button>
-      <button data-mode="rel">相對音準 (C/Am)</button>
+      <button data-mode="sheet">照譜</button>
+      <button data-mode="abs">實際和弦</button>
+      <button data-mode="rel">C 調</button>
     </div>
   </header>
 
   <section class="controls">
     <div class="row">
       <label class="field">
-        <span>調</span>
+        <span>譜上的調</span>
+        <select id="sheetSel"></select>
+      </label>
+      <label class="field">
+        <span>要彈的調</span>
         <select id="keySel"></select>
       </label>
       <label class="field">
