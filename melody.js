@@ -39,7 +39,8 @@ function parseMidi(buf) {
     pos = end;
   }
   notes.sort((a, b) => a.t - b.t);
-  const t0 = notes.length ? notes[0].t : 0;
+  // 去掉開頭的空白，但只去整拍，讓拍點位置不變（弱起半拍的歌才不會錯位）
+  const t0 = notes.length ? Math.floor(notes[0].t / tpb) * tpb : 0;
   notes.forEach((n) => { n.t -= t0; });
   return { tpb, notes };
 }
@@ -80,8 +81,29 @@ function startMelody(song, onEnd) {
   const tonic = melodyTonic(song.notes, state.scale);
   mel = { song, tonic, idx: 0, onEnd, voices: [] };
   mel.secPerTick = secPerTick(song);
-  mel.t0 = ctx.currentTime + 0.15;
+  // 刷弦正在播：從下一個拍點開始，跟刷弦同拍
+  mel.t0 = playing ? Math.max(nextBeatTime(ctx.currentTime), ctx.currentTime + 0.1) : ctx.currentTime + 0.15;
   mel.timer = setInterval(scheduleMelody, 25);
+  scheduleMelody();
+}
+
+// 點拍速時：旋律最近的拍點對齊到這一下
+function alignMelodyBeat(tapTime) {
+  if (!mel) return;
+  scheduleMelody(); // 先套用新速度
+  const beatSec = mel.secPerTick * mel.song.tpb * (UNIT_TICKS[METERS[state.meter].unit] || 1);
+  const pos = (tapTime - mel.t0) / beatSec;
+  mel.t0 += (pos - Math.round(pos)) * beatSec;
+  // 還沒響的音取消，照新的拍點重排
+  const now = ctx.currentTime;
+  mel.voices = mel.voices.filter((v) => {
+    if (v.t <= now) return true;
+    try { v.oscs.forEach((o) => o.stop(0)); v.g.disconnect(); } catch (_) {}
+    return false;
+  });
+  const notes = mel.song.notes;
+  mel.idx = 0;
+  while (mel.idx < notes.length && mel.t0 + notes[mel.idx].t * mel.secPerTick <= now) mel.idx++;
   scheduleMelody();
 }
 
@@ -144,7 +166,7 @@ function melodyNote(midi, t, len) {
     o.start(t); o.stop(t + len + 0.05);
     return o;
   });
-  return { g, oscs };
+  return { g, oscs, t };
 }
 
 function stopMelody() {
