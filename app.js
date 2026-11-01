@@ -44,16 +44,17 @@ function quality(ch) {
 }
 
 // 和弦鍵：級數、相對主音的半音、性質
+// top: 最常用，放第一排、放大
 const CHORD_SETS = {
   major: [
-    { deg: 'I', off: 0, q: '', dia: true },
-    { deg: 'ii', off: 2, q: 'm', dia: true },
-    { deg: 'iii', off: 4, q: 'm', dia: true },
-    { deg: 'IV', off: 5, q: '', dia: true },
-    { deg: 'V', off: 7, q: '', dia: true },
-    { deg: 'vi', off: 9, q: 'm', dia: true },
+    { deg: 'I', off: 0, q: '', top: true },
+    { deg: 'ii', off: 2, q: 'm', top: true },
+    { deg: 'IV', off: 5, q: '', top: true },
+    { deg: 'V', off: 7, q: '', top: true },
+    { deg: 'V7', off: 7, q: '7', top: true },
+    { deg: 'vi', off: 9, q: 'm', top: true },
+    { deg: 'iii', off: 4, q: 'm' },
     { deg: 'Vsus4', off: 7, q: 'sus4' },
-    { deg: 'V7', off: 7, q: '7' },
     { deg: 'I7', off: 0, q: '7' },
     { deg: 'III', off: 4, q: '' },
     { deg: 'II', off: 2, q: '' },
@@ -61,14 +62,14 @@ const CHORD_SETS = {
     { deg: 'iv', off: 5, q: 'm' },
   ],
   minor: [
-    { deg: 'i', off: 0, q: 'm', dia: true },
-    { deg: '♭III', off: 3, q: '', dia: true },
-    { deg: 'iv', off: 5, q: 'm', dia: true },
-    { deg: 'v', off: 7, q: 'm', dia: true },
-    { deg: '♭VI', off: 8, q: '', dia: true },
-    { deg: '♭VII', off: 10, q: '', dia: true },
+    { deg: 'i', off: 0, q: 'm', top: true },
+    { deg: '♭III', off: 3, q: '', top: true },
+    { deg: 'iv', off: 5, q: 'm', top: true },
+    { deg: 'V7', off: 7, q: '7', top: true },
+    { deg: '♭VI', off: 8, q: '', top: true },
+    { deg: '♭VII', off: 10, q: '', top: true },
+    { deg: 'v', off: 7, q: 'm' },
     { deg: 'V', off: 7, q: '' },
-    { deg: 'V7', off: 7, q: '7' },
     { deg: 'Vsus4', off: 7, q: 'sus4' },
     { deg: 'ii°', off: 2, q: 'dim' },
     { deg: 'IV', off: 5, q: '' },
@@ -533,14 +534,19 @@ const solButtons = PITCH_KEYS.map((p, k) => {
   return b;
 });
 
-const padButtons = CHORDS.map((c, i) => {
-  const b = document.createElement('button');
-  b.className = c.dia ? 'diatonic' : '';
-  b.innerHTML = '<span class="n"></span><span class="d"></span>';
-  b.addEventListener('pointerdown', (e) => { e.preventDefault(); pressChord(i); });
-  pad.appendChild(b);
-  return b;
-});
+// 和弦鍵：常用的放上面一排（大），其他放下面（小）；換大小調時重建
+let padButtons = [], padFor = null;
+function buildPad() {
+  pad.innerHTML = '<div class="pad-main"></div><div class="pad-more"></div>';
+  padButtons = CHORDS.map((c, i) => {
+    const b = document.createElement('button');
+    b.innerHTML = '<span class="n"></span><span class="d"></span>';
+    b.addEventListener('pointerdown', (e) => { e.preventDefault(); pressChord(i); });
+    pad.querySelector(c.top ? '.pad-main' : '.pad-more').appendChild(b);
+    return b;
+  });
+  padFor = CHORDS;
+}
 
 function pressChord(i) {
   const ch = { i, mod: state.mod };
@@ -609,6 +615,7 @@ function render() {
   shiftVal.innerHTML = state.shift === 0
     ? '原調 <small>' + keyName + '</small>'
     : (state.shift > 0 ? '升 ' : '降 ') + Math.abs(state.shift) + ' <small>' + keyName + ' 調</small>';
+  if (padFor !== CHORDS) buildPad();
   padButtons.forEach((b, i) => {
     const ch = { i, mod: state.mod };
     b.querySelector('.n').textContent = chordName(ch, view);
@@ -664,6 +671,7 @@ $('meterSeg').addEventListener('click', (e) => {
 });
 sheetSel.addEventListener('change', () => {
   const [sc, i] = sheetSel.value.split(':');
+  if (sc !== state.scale) { if (playing) stop(); current = null; pending = null; }
   state.scale = sc;
   state.sheet = +i;
   CHORDS = CHORD_SETS[state.scale];

@@ -75,14 +75,21 @@ input[type=range] { width: 100%; accent-color: var(--accent); }
 .steps span.beat { border-bottom: 2px solid var(--panel2); }
 .steps span.on { background: var(--accent2); color: #1b1408; }
 
-.pad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.pad { display: grid; gap: 8px; }
+.pad-main, .pad-more { display: grid; gap: 8px; }
+.pad-main { grid-template-columns: repeat(3, 1fr); }
+.pad-more { grid-template-columns: repeat(4, 1fr); gap: 6px; }
+.pad-main button { min-height: 86px; background: #353b49; }
+.pad-main button .n { font-size: 34px; }
+.pad-more button { min-height: 54px; padding: 8px 2px 6px; }
+.pad-more button .n { font-size: 19px; }
+.pad-more button .d { font-size: 10px; }
 .pad button {
   border: 0; border-radius: 14px; background: var(--panel2); padding: 14px 4px 10px;
   display: grid; gap: 2px; min-height: 76px;
 }
 .pad button .n { font-size: 26px; font-weight: 700; }
 .pad button .d { font-size: 12px; color: var(--muted); }
-.pad button.diatonic { background: #2f3440; }
 .pad button.on { background: var(--accent); color: #1b1408; }
 .pad button.on .d { color: #3a2a12; }
 .pad button.pending { outline: 3px dashed var(--accent2); outline-offset: -3px; }
@@ -101,7 +108,8 @@ input[type=range] { width: 100%; accent-color: var(--accent); }
 .play.stop { background: #d9534f; color: #fff; }
 
 @media (min-width: 560px) {
-  .pad { grid-template-columns: repeat(4, 1fr); }
+  .pad-main { grid-template-columns: repeat(6, 1fr); }
+  .pad-more { grid-template-columns: repeat(7, 1fr); }
 }
 
 .tempo.keyshift { grid-template-columns: 1fr 1.3fr 1fr; }
@@ -167,10 +175,15 @@ body.score-mode .pitch { flex: none; margin-bottom: 6px; gap: 4px; }
 body.score-mode .pitch-head { display: none; }
 body.score-mode .solfege button { padding: 7px 0 2px; }
 body.score-mode .solfege button .n { font-size: 16px; }
-body.score-mode .pad { flex: none; grid-template-columns: repeat(4, 1fr); gap: 6px; }
-body.score-mode .pad button { min-height: 50px; padding: 6px 2px; }
-body.score-mode .pad button .n { font-size: 19px; }
-body.score-mode .pad button .d { font-size: 10px; }
+body.score-mode .pad { flex: none; gap: 5px; }
+body.score-mode .pad-main { grid-template-columns: repeat(6, 1fr); gap: 5px; }
+body.score-mode .pad-more { grid-template-columns: repeat(7, 1fr); gap: 4px; }
+body.score-mode .pad-main button { min-height: 54px; padding: 6px 1px; }
+body.score-mode .pad-main button .n { font-size: 21px; }
+body.score-mode .pad-main button .d { font-size: 10px; }
+body.score-mode .pad-more button { min-height: 38px; padding: 4px 1px; }
+body.score-mode .pad-more button .n { font-size: 14px; }
+body.score-mode .pad-more button .d { display: none; }
 body.score-mode .bottom { position: static; padding: 6px 0 0; background: none; flex: none; }
 body.score-mode .play { height: 46px; font-size: 18px; }
 
