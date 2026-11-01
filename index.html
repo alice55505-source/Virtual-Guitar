@@ -17,7 +17,24 @@
 <body>
   <header class="top">
     <h1>吉他伴奏</h1>
+    <div class="top-btns">
+      <button id="settingsBtn" class="top-btn only-score">⚙ 設定</button>
+      <button id="hymnBtn" class="top-btn">📖 詩歌</button>
+    </div>
   </header>
+
+  <section id="scorePane" class="score-pane">
+    <div class="score-head">
+      <div class="score-info">
+        <div id="hymnTitle" class="hymn-title"></div>
+        <div id="hymnMeta" class="hymn-meta"></div>
+      </div>
+      <button id="hymnSwitch">換歌</button>
+      <button id="zoomBtn">放大</button>
+      <button id="hymnClose" aria-label="關閉樂譜">✕</button>
+    </div>
+    <div id="scoreScroll" class="score-scroll"></div>
+  </section>
 
   <section class="controls">
     <div class="row">
@@ -89,6 +106,27 @@
     <button id="playBtn" class="play">▶ 開始</button>
   </footer>
 
+  <div id="hymnPicker" class="picker hidden">
+    <div class="picker-box">
+      <div class="picker-head">
+        <b>選詩歌</b>
+        <button id="hymnPickerClose" aria-label="關閉">✕</button>
+      </div>
+      <div id="hymnCats" class="seg wrap picker-cats"></div>
+      <div class="picker-input">
+        <input id="hymnNum" type="number" inputmode="numeric" min="1" placeholder="輸入詩歌編號">
+        <button id="hymnGo">開啟</button>
+      </div>
+      <div id="hymnRecentWrap">
+        <div class="picker-label">最近</div>
+        <div id="hymnRecent" class="picker-recent"></div>
+      </div>
+      <div class="picker-note">開啟後會依譜自動設定調和拍號</div>
+    </div>
+  </div>
+
   <script src="app.js"></script>
+  <script src="hymn-s2t.js"></script>
+  <script src="hymn.js"></script>
 </body>
 </html>

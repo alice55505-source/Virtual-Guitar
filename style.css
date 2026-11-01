@@ -120,3 +120,63 @@ input[type=range] { width: 100%; accent-color: var(--accent); }
 .solfege button .s { font-size: 11px; color: var(--text); opacity: .8; }
 .solfege button .d { font-size: 11px; color: var(--muted); }
 .solfege button:active { background: var(--on); color: #08130d; }
+
+/* ===== 詩歌樂譜 ===== */
+.top-btns { display: flex; gap: 6px; }
+.top-btn { border: 0; border-radius: 10px; background: var(--panel2); padding: 8px 12px; font-weight: 700; }
+#hymnBtn { background: var(--accent); color: #1b1408; }
+.only-score, .score-pane { display: none; }
+.hidden { display: none !important; }
+
+body.score-mode {
+  height: 100vh; height: 100dvh; overflow: hidden;
+  display: flex; flex-direction: column;
+  padding-bottom: calc(env(safe-area-inset-bottom) + 6px);
+}
+body.score-mode .top h1 { font-size: 16px; }
+body.score-mode .only-score { display: inline-block; }
+body.score-mode .score-pane {
+  display: flex; flex-direction: column; flex: 1 1 auto; min-height: 120px;
+  background: #fff; border-radius: 12px; overflow: hidden; margin: 6px 0;
+}
+.score-head { display: flex; align-items: center; gap: 6px; padding: 6px 8px; background: var(--panel); }
+.score-info { flex: 1; min-width: 0; }
+.hymn-title { font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.hymn-meta { font-size: 12px; color: var(--accent2); }
+.score-head button { border: 0; border-radius: 8px; background: var(--panel2); padding: 6px 10px; flex: none; }
+.score-scroll { flex: 1; overflow: auto; -webkit-overflow-scrolling: touch; touch-action: pan-x pan-y; }
+.score-scroll img { display: block; width: var(--zoom, 100%); max-width: none; height: auto; }
+.score-msg { color: #555; padding: 24px; text-align: center; }
+
+/* 看譜時：設定收起來、下方控制區變精簡 */
+body.score-mode .controls { display: none; }
+body.score-mode.show-settings .controls { display: grid; max-height: 42vh; overflow: auto; flex: none; }
+body.score-mode .display { flex: none; display: flex; align-items: center; justify-content: space-between; padding: 6px 12px; margin: 0 0 6px; gap: 8px; }
+body.score-mode .now { min-height: 0; flex-direction: row; gap: 8px; align-items: baseline; }
+body.score-mode .chord-name { font-size: 34px; }
+body.score-mode .chord-sub, body.score-mode .steps { display: none; }
+body.score-mode .beats i { width: 12px; height: 12px; }
+body.score-mode .pitch { flex: none; margin-bottom: 6px; gap: 4px; }
+body.score-mode .pitch-head { display: none; }
+body.score-mode .solfege button { padding: 4px 0; }
+body.score-mode .solfege button .n { font-size: 16px; }
+body.score-mode .solfege button .s { display: none; }
+body.score-mode .pad { flex: none; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+body.score-mode .pad button { min-height: 50px; padding: 6px 2px; }
+body.score-mode .pad button .n { font-size: 19px; }
+body.score-mode .pad button .d { font-size: 10px; }
+body.score-mode .bottom { position: static; padding: 6px 0 0; background: none; flex: none; }
+body.score-mode .play { height: 46px; font-size: 18px; }
+
+/* 選歌視窗 */
+.picker { position: fixed; inset: 0; background: rgba(0,0,0,.55); display: flex; align-items: flex-start; justify-content: center; z-index: 10; padding: 12vh 12px 0; }
+.picker-box { background: var(--panel); border-radius: 16px; padding: 14px; width: 100%; max-width: 480px; display: grid; gap: 12px; }
+.picker-head { display: flex; justify-content: space-between; align-items: center; font-size: 18px; }
+.picker-head button { border: 0; background: var(--panel2); border-radius: 8px; padding: 6px 10px; }
+.seg.wrap.picker-cats { grid-template-columns: repeat(3, 1fr); width: 100%; }
+.picker-input { display: grid; grid-template-columns: 1fr auto; gap: 8px; }
+.picker-input input { background: var(--bg); border: 1px solid var(--panel2); border-radius: 10px; padding: 10px; font-size: 22px; width: 100%; }
+.picker-input button { border: 0; border-radius: 10px; background: var(--accent); color: #1b1408; font-weight: 800; padding: 0 22px; font-size: 18px; }
+.picker-label, .picker-note { font-size: 12px; color: var(--muted); }
+.picker-recent { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px; }
+.picker-recent button { border: 0; border-radius: 8px; background: var(--panel2); padding: 6px 10px; }

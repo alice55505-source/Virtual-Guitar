@@ -114,7 +114,10 @@ if (typeof state.shift !== 'number') {
 delete state.mode;
 const syncKey = () => { state.key = ((state.sheet + state.shift) % 12 + 12) % 12; };
 syncKey();
-const save = () => { try { localStorage.setItem('vg-settings', JSON.stringify(state)); } catch (_) {} };
+const save = () => {
+  try { localStorage.setItem('vg-settings', JSON.stringify(state)); } catch (_) {}
+  if (window.onSave) window.onSave();
+};
 
 let current = null;   // 正在彈的和弦 {i, mod}
 let pending = null;   // 等下一拍生效的和弦 {i, mod}

@@ -1,9 +1,11 @@
-const CACHE = 'guitar-v21';
+const CACHE = 'guitar-v22';
 const ASSETS = [
   './',
   './index.html',
   './style.css',
   './app.js',
+  './hymn.js',
+  './hymn-s2t.js',
   './manifest.webmanifest',
   './icons/icon.svg',
   './icons/icon-192.png',
