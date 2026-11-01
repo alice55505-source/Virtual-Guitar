@@ -76,12 +76,12 @@ const CHORD_SETS = {
 let CHORDS = CHORD_SETS.major;
 const keyTable = () => (state.scale === 'minor' ? MINOR_KEYS : MAJOR_KEYS);
 
-// 拍號：每拍幾個步（八分音符）、幾拍、刷法（D 下刷 / U 上刷 / - 空）、
+// 拍號：每拍幾個步（八分音符）、幾拍、刷法（B 只彈根音 / D 下刷 / U 上刷 / - 空）、
 // 分解和弦（弦號：最低音弦算 1，1 = 根音，- = 停）、拍子單位
 const METERS = {
   '4/4': { spb: 2, beats: 4, strum: 'D-DU-UDU', arp: '1456-454', unit: '♩' },
   '3/4': { spb: 2, beats: 3, strum: 'D-DUDU', arp: '145654', unit: '♩' },
-  '6/8': { spb: 3, beats: 2, strum: 'DDUDDU', arp: '145654', unit: '♩.' },
+  '6/8': { spb: 3, beats: 2, strum: 'B-DUDU', arp: '145654', unit: '♩.' },
   '3/2': { spb: 4, beats: 3, strum: 'D-DU-UDUD-DU', arp: '145464546454', unit: '𝅗𝅥' },
   '2/2': { spb: 4, beats: 2, strum: 'D-DU-UDU', arp: '14546454', unit: '𝅗𝅥' },
   '9/8': { spb: 3, beats: 3, strum: 'DDUDDUDDU', arp: '145654654', unit: '♩.' },
@@ -374,7 +374,8 @@ function scheduleStep(i, t) {
 
   if (state.pattern === 'strum') {
     const c = m.strum[i];
-    if (c === 'D' || c === 'U') strum(notes, t, c, accent, dur, isBeat);
+    if (c === 'B') playString(0, notes[0], t, 1.3);
+    else if (c === 'D' || c === 'U') strum(notes, t, c, accent, dur, isBeat);
   } else if (state.pattern === 'beat') {
     if (isBeat) strum(notes, t, 'D', accent, dur);
   } else {
@@ -556,7 +557,7 @@ function buildSteps() {
   for (let i = 0; i < total; i++) {
     const s = document.createElement('span');
     let c = '';
-    if (state.pattern === 'strum') c = { D: '↓', U: '↑' }[m.strum[i]] || '·';
+    if (state.pattern === 'strum') c = { B: '根', D: '↓', U: '↑' }[m.strum[i]] || '·';
     else if (state.pattern === 'beat') c = i % m.spb === 0 ? '↓' : '·';
     else c = m.arp[i] === '1' ? '根' : m.arp[i] === '-' ? '·' : m.arp[i];
     s.textContent = c;

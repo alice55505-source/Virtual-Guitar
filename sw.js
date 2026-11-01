@@ -1,4 +1,4 @@
-const CACHE = 'guitar-v18';
+const CACHE = 'guitar-v19';
 const ASSETS = [
   './',
   './index.html',
