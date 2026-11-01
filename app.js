@@ -58,7 +58,6 @@ const CHORD_SETS = {
     { deg: 'I7', off: 0, q: '7' },
     { deg: 'III', off: 4, q: '' },
     { deg: 'II', off: 2, q: '' },
-    { deg: '♭VII', off: 10, q: '' },
     { deg: 'iv', off: 5, q: 'm' },
   ],
   minor: [
