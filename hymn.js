@@ -17,7 +17,6 @@ let hasFu = false;
 const hymnLabel = (cat, num) => HYMN_CATS[cat].label + ' ' + (cat === 'db' && num > FU_OFFSET ? '附' + (num - FU_OFFSET) : num);
 let hymn = null; // 目前開啟的詩歌 {cat, num, title}
 let pickCat = 'db';
-let zoom = 1;
 const songPrefs = (() => { try { return JSON.parse(localStorage.getItem('vg-songs') || '{}'); } catch (_) { return {}; } })();
 let recent = (() => { try { return JSON.parse(localStorage.getItem('vg-recent') || '[]'); } catch (_) { return []; } })();
 const saveSongs = () => { try { localStorage.setItem('vg-songs', JSON.stringify(songPrefs)); localStorage.setItem('vg-recent', JSON.stringify(recent)); } catch (_) {} };
@@ -139,14 +138,29 @@ async function loadScore(cat, num) {
     wrap.appendChild(img);
     box.appendChild(wrap);
   });
-  setZoom(1);
   box.scrollTop = 0;
 }
 
-function setZoom(z) {
-  zoom = z;
-  $('scoreScroll').style.setProperty('--zoom', zoom * 100 + '%');
-  $('zoomBtn').textContent = zoom === 1 ? '放大' : '縮小';
+// 上一首／下一首：台語詩歌編號不連續，照目錄跳；其他詩本 ±1（大本 780 之後是附1~附6）
+let twList = null;
+async function stepHymn(dir) {
+  if (!hymn) return;
+  const { cat, num } = hymn;
+  let next = null;
+  if (cat === 'tw') {
+    if (!twList) {
+      try {
+        const t = await (await fetch(HYMN_TW + 'tw/toc.txt')).text();
+        twList = [...t.matchAll(/#(\d+)/g)].map((m) => +m[1]).sort((a, b) => a - b);
+      } catch (_) { twList = []; }
+    }
+    const k = twList.indexOf(num);
+    next = k >= 0 ? twList[k + dir] : twList.find((n) => (dir > 0 ? n > num : n < num));
+  } else {
+    next = num + dir;
+    if (cat === 'db' && next > FU_OFFSET + 6) next = null;
+  }
+  if (next && next >= 1) openHymn(cat, next);
 }
 
 function closeHymn() {
@@ -204,5 +218,6 @@ $('hymnNum').addEventListener('keydown', (e) => { if (e.key === 'Enter') submitP
 $('hymnPicker').addEventListener('click', (e) => { if (e.target.id === 'hymnPicker') closePicker(); });
 $('hymnClose').addEventListener('click', closeHymn);
 $('hymnSwitch').addEventListener('click', openPicker);
-$('zoomBtn').addEventListener('click', () => setZoom(zoom === 1 ? 1.6 : 1));
+$('prevHymn').addEventListener('click', () => stepHymn(-1));
+$('nextHymn').addEventListener('click', () => stepHymn(1));
 $('settingsBtn').addEventListener('click', () => document.body.classList.toggle('show-settings'));
