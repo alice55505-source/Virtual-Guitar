@@ -439,6 +439,14 @@ function stop() {
 
 /* ========== 起音：簡譜 1~7 ========== */
 const SOLFEGE = [['Do', 0], ['Re', 2], ['Mi', 4], ['Fa', 5], ['Sol', 7], ['La', 9], ['Ti', 11]];
+// 起音鍵：兩個八度，低音 5̣ 到高音 5̇（oct -1 = 下加點、1 = 上加點）
+const PITCH_KEYS = [];
+for (let oct = -1; oct <= 1; oct++) {
+  SOLFEGE.forEach(([name, semi], d) => {
+    if ((oct === -1 && d < 4) || (oct === 1 && d > 4)) return;
+    PITCH_KEYS.push({ num: d + 1, name, oct, semi: semi + 12 * oct });
+  });
+}
 // 首調唱名：大調 Do = 主音；小調用 La 小調（Do = 主音往上 3 個半音）
 function doPc() { return (state.key + (state.scale === 'minor' ? 3 : 0)) % 12; }
 // Do 放在好唱的音域：G3 ~ F#4
@@ -477,7 +485,7 @@ function playTone(midi, t, len = 0.7) {
 function playSolfege(k) {
   initAudio();
   if (ctx.state === 'suspended') ctx.resume();
-  playTone(doMidi() + SOLFEGE[k][1], ctx.currentTime + 0.01);
+  playTone(doMidi() + PITCH_KEYS[k].semi, ctx.currentTime + 0.01);
 }
 
 /* ========== 螢幕常亮 ========== */
@@ -514,9 +522,11 @@ Object.keys(METERS).forEach((m) => {
   $('meterSeg').appendChild(b);
 });
 
-const solButtons = SOLFEGE.map(([name], k) => {
+const solButtons = PITCH_KEYS.map((p, k) => {
   const b = document.createElement('button');
-  b.innerHTML = '<span class="n">' + (k + 1) + '</span><span class="s">' + name + '</span><span class="d"></span>';
+  b.className = p.oct < 0 ? 'lo' : p.oct > 0 ? 'hi' : 'mid';
+  if (p.oct === 0 && p.num === 1) b.classList.add('do');
+  b.innerHTML = '<span class="n">' + p.num + '</span><span class="d"></span>';
   b.addEventListener('pointerdown', (e) => { e.preventDefault(); playSolfege(k); });
   $('solfege').appendChild(b);
   return b;
@@ -593,7 +603,7 @@ function render() {
   const view = 'sheet';
   const sameAsAbs = state.shift === 0;
   const keyName = keyTable()[state.key][0];
-  solButtons.forEach((b, k) => { b.querySelector('.d').textContent = noteName(doPc() + SOLFEGE[k][1]); });
+  solButtons.forEach((b, k) => { b.querySelector('.d').textContent = noteName(doPc() + PITCH_KEYS[k].semi + 24); });
   $('doLabel').textContent = '1 = ' + noteName(doPc()) + (state.scale === 'minor' ? '（6 = ' + noteName(state.key) + '）' : '');
   shiftVal.innerHTML = state.shift === 0
     ? '原調 <small>' + keyName + '</small>'

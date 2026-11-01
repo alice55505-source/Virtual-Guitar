@@ -111,14 +111,21 @@ input[type=range] { width: 100%; accent-color: var(--accent); }
 .pitch { margin: 0 0 12px; display: grid; gap: 6px; }
 .pitch-head { display: flex; align-items: center; justify-content: space-between; font-size: 13px; color: var(--muted); }
 .pitch-head b { color: var(--accent2); font-size: 15px; }
-.solfege { display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; }
+.solfege { display: grid; grid-template-columns: repeat(8, 1fr); gap: 4px; }
 .solfege button {
-  border: 0; border-radius: 10px; background: #26303a; padding: 8px 0 6px; display: grid; gap: 1px;
+  border: 0; border-radius: 9px; background: #26303a; padding: 9px 0 4px; display: grid; gap: 1px;
 }
-.solfege button:first-child { background: #2e4a3a; }
-.solfege button .n { font-size: 20px; font-weight: 800; }
-.solfege button .s { font-size: 11px; color: var(--text); opacity: .8; }
-.solfege button .d { font-size: 11px; color: var(--muted); }
+.solfege button.lo { background: #222a31; }
+.solfege button.hi { background: #2d3843; }
+.solfege button.do { background: #2e4a3a; }
+.solfege button .n { font-size: 19px; font-weight: 800; position: relative; line-height: 1.15; }
+/* 簡譜的高低音點 */
+.solfege button.hi .n::before, .solfege button.lo .n::after {
+  content: ''; position: absolute; left: 50%; width: 4px; height: 4px; margin-left: -2px; border-radius: 50%; background: currentColor;
+}
+.solfege button.hi .n::before { top: -5px; }
+.solfege button.lo .n::after { bottom: -4px; }
+.solfege button .d { font-size: 10px; color: var(--muted); margin-top: 3px; }
 .solfege button:active { background: var(--on); color: #08130d; }
 
 /* ===== 詩歌樂譜 ===== */
@@ -158,9 +165,8 @@ body.score-mode .chord-sub, body.score-mode .steps { display: none; }
 body.score-mode .beats i { width: 12px; height: 12px; }
 body.score-mode .pitch { flex: none; margin-bottom: 6px; gap: 4px; }
 body.score-mode .pitch-head { display: none; }
-body.score-mode .solfege button { padding: 4px 0; }
+body.score-mode .solfege button { padding: 7px 0 2px; }
 body.score-mode .solfege button .n { font-size: 16px; }
-body.score-mode .solfege button .s { display: none; }
 body.score-mode .pad { flex: none; grid-template-columns: repeat(4, 1fr); gap: 6px; }
 body.score-mode .pad button { min-height: 50px; padding: 6px 2px; }
 body.score-mode .pad button .n { font-size: 19px; }
