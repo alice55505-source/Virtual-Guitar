@@ -76,15 +76,16 @@ const CHORD_SETS = {
 let CHORDS = CHORD_SETS.major;
 const keyTable = () => (state.scale === 'minor' ? MINOR_KEYS : MAJOR_KEYS);
 
-// 拍號：每拍幾個步（八分音符）、幾拍、刷法（D 下刷 / U 上刷 / - 空）、拍子單位
+// 拍號：每拍幾個步（八分音符）、幾拍、刷法（D 下刷 / U 上刷 / - 空）、
+// 分解和弦（弦號：最低音弦算 1，1 = 根音）、拍子單位
 const METERS = {
-  '4/4': { spb: 2, beats: 4, strum: 'D-DU-UDU', unit: '♩' },
-  '3/4': { spb: 2, beats: 3, strum: 'D-DUDU', unit: '♩' },
-  '6/8': { spb: 3, beats: 2, strum: 'DDUDDU', unit: '♩.' },
-  '3/2': { spb: 4, beats: 3, strum: 'D-DU-UDUD-DU', unit: '𝅗𝅥' },
-  '2/2': { spb: 4, beats: 2, strum: 'D-DU-UDU', unit: '𝅗𝅥' },
-  '9/8': { spb: 3, beats: 3, strum: 'DDUDDUDDU', unit: '♩.' },
-  '6/4': { spb: 2, beats: 6, strum: 'D-DUDUD-DUDU', unit: '♩' },
+  '4/4': { spb: 2, beats: 4, strum: 'D-DU-UDU', arp: '14546454', unit: '♩' },
+  '3/4': { spb: 2, beats: 3, strum: 'D-DUDU', arp: '145654', unit: '♩' },
+  '6/8': { spb: 3, beats: 2, strum: 'DDUDDU', arp: '145654', unit: '♩.' },
+  '3/2': { spb: 4, beats: 3, strum: 'D-DU-UDUD-DU', arp: '145464546454', unit: '𝅗𝅥' },
+  '2/2': { spb: 4, beats: 2, strum: 'D-DU-UDU', arp: '14546454', unit: '𝅗𝅥' },
+  '9/8': { spb: 3, beats: 3, strum: 'DDUDDUDDU', arp: '145654654', unit: '♩.' },
+  '6/4': { spb: 2, beats: 6, strum: 'D-DUDUD-DUDU', arp: '145654145654', unit: '♩' },
 };
 
 /* ========== 狀態 ========== */
@@ -377,14 +378,9 @@ function scheduleStep(i, t) {
   } else if (state.pattern === 'beat') {
     if (isBeat) strum(notes, t, 'D', accent, dur);
   } else {
-    // 分解和弦：小節第一拍彈根音，中段彈第 5 弦，其餘輪流高音弦
-    const total = m.strum.length;
-    const half = m.beats % 2 === 0 ? total / 2 : -1;
-    let s;
-    if (i === 0) s = 0;
-    else if (i === half) s = 1;
-    else s = [2, 3, 4, 5, 4, 3][(i - 1) % 6];
-    playString(s, notes[s], t, accent * 0.95);
+    // 分解和弦：照拍號的弦號順序（4/4：根音 4 5 4 6 4 5 4）
+    const s = +m.arp[i] - 1;
+    playString(s, notes[s], t, s === 0 ? 1.1 : accent * 0.85);
   }
 }
 
@@ -561,7 +557,7 @@ function buildSteps() {
     let c = '';
     if (state.pattern === 'strum') c = { D: '↓', U: '↑' }[m.strum[i]] || '·';
     else if (state.pattern === 'beat') c = i % m.spb === 0 ? '↓' : '·';
-    else c = '♪';
+    else c = m.arp[i] === '1' ? '根' : m.arp[i];
     s.textContent = c;
     if (i % m.spb === 0) s.classList.add('beat');
     stepsEl.appendChild(s);
