@@ -76,7 +76,7 @@ const CHORD_SETS = {
 let CHORDS = CHORD_SETS.major;
 const keyTable = () => (state.scale === 'minor' ? MINOR_KEYS : MAJOR_KEYS);
 
-// 拍號：每拍幾個步（八分音符）、幾拍、刷法（B 只彈根音 / D 下刷 / U 上刷 / - 空）、
+// 拍號：每拍幾個步（八分音符）、幾拍、刷法（B 根：刷低音 3 條弦 / D 下刷 / U 上刷 / - 空）、
 // 分解和弦（弦號：最低音弦算 1，1 = 根音，- = 停）、拍子單位
 const METERS = {
   '4/4': { spb: 2, beats: 4, strum: 'D-DU-UDU', arp: '1456-454', unit: '♩' },
@@ -374,7 +374,11 @@ function scheduleStep(i, t) {
 
   if (state.pattern === 'strum') {
     const c = m.strum[i];
-    if (c === 'B') playString(0, notes[0], t, 1.3);
+    if (c === 'B') {
+      // 根：只刷低音 3 條弦（根音最重）
+      const span = Math.min(0.03, dur * 0.3);
+      for (let s = 0; s < 3; s++) playString(s, notes[s], t + (span * s) / 2, s === 0 ? 1.3 : 0.9);
+    }
     else if (c === 'D' || c === 'U') strum(notes, t, c, accent, dur, isBeat);
   } else if (state.pattern === 'beat') {
     if (isBeat) strum(notes, t, 'D', accent, dur);
