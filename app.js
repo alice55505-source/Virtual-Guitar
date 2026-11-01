@@ -427,7 +427,7 @@ function stop() {
   drawBeat(-1);
 }
 
-/* ========== 起音：唱名鍵 + 定調 ========== */
+/* ========== 起音：簡譜 1~7 ========== */
 const SOLFEGE = [['Do', 0], ['Re', 2], ['Mi', 4], ['Fa', 5], ['Sol', 7], ['La', 9], ['Ti', 11]];
 // 首調唱名：大調 Do = 主音；小調用 La 小調（Do = 主音往上 3 個半音）
 function doPc() { return (state.key + (state.scale === 'minor' ? 3 : 0)) % 12; }
@@ -460,21 +460,6 @@ function playSolfege(k) {
   initAudio();
   if (ctx.state === 'suspended') ctx.resume();
   playTone(doMidi() + SOLFEGE[k][1], ctx.currentTime + 0.01);
-}
-
-// 定調：I → IV → V7 → I 各刷一下（每個和弦 2 拍），最後給 Do 音
-function playCadence() {
-  if (playing) stop();
-  initAudio();
-  if (ctx.state === 'suspended') ctx.resume();
-  const seq = state.scale === 'minor' ? [0, 2, 7, 0] : [0, 3, 7, 0];
-  const beat = 60 / state.bpm;
-  let t = ctx.currentTime + 0.08;
-  seq.forEach((i, n) => {
-    strum(voicing({ i, mod: '' }), t, 'D', n === 3 ? 1 : 0.9, beat, true);
-    t += beat * 2;
-  });
-  playTone(doMidi(), t - beat * 2 + 0.02, beat * 2 + 0.6);
 }
 
 /* ========== 螢幕常亮 ========== */
@@ -514,7 +499,6 @@ const solButtons = SOLFEGE.map(([name], k) => {
   $('solfege').appendChild(b);
   return b;
 });
-$('cadenceBtn').addEventListener('click', playCadence);
 
 const padButtons = CHORDS.map((c, i) => {
   const b = document.createElement('button');
