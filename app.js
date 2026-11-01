@@ -151,6 +151,7 @@ function voicing(ch) {
 let ctx = null, master = null;
 const bufCache = new Map();
 const strings = new Array(6).fill(null); // 每條弦目前發聲中的 {src, gain}
+const voices = []; // 所有已排程的音 {src, gain, t}
 
 function initAudio() {
   if (ctx) return;
@@ -163,6 +164,7 @@ function initAudio() {
   comp.threshold.value = -14; comp.ratio.value = 4;
   master = ctx.createGain(); master.gain.value = 0.8;
   master.connect(body); body.connect(air); air.connect(comp); comp.connect(ctx.destination);
+  prewarm();
 }
 
 function pluckBuffer(midi) {
@@ -215,6 +217,22 @@ function playString(s, midi, t, vel) {
   src.start(t);
   src.stop(t + 3);
   strings[s] = { src, gain: g, vel: vel * 0.22 };
+  const now = ctx.currentTime;
+  for (let k = voices.length - 1; k >= 0; k--) if (voices[k].t + 3 < now) voices.splice(k, 1);
+  voices.push({ src, gain: g, t });
+}
+
+// 立刻消掉所有聲音：已在響的淡出，還沒開始的（排程中的舊和弦）直接取消
+function cutAll(now) {
+  for (const v of voices) {
+    if (v.t > now) { try { v.src.stop(0); } catch (_) {} v.gain.disconnect(); continue; }
+    v.gain.gain.cancelScheduledValues(now);
+    v.gain.gain.setValueAtTime(v.gain.gain.value, now);
+    v.gain.gain.linearRampToValueAtTime(0, now + 0.025);
+    try { v.src.stop(now + 0.04); } catch (_) {}
+  }
+  voices.length = 0;
+  strings.fill(null);
 }
 
 function strum(notes, t, dir, vel, dur) {
@@ -232,7 +250,17 @@ function strum(notes, t, dir, vel, dur) {
 
 function stopAll() {
   if (!ctx) return;
-  for (let s = 0; s < 6; s++) muteString(s, ctx.currentTime);
+  cutAll(ctx.currentTime);
+}
+
+// 預先算好常用音高的撥弦聲，避免第一次按某和弦時卡頓
+function prewarm() {
+  let m = 40;
+  const job = () => {
+    for (let k = 0; k < 4 && m <= 80; k++, m++) pluckBuffer(m);
+    if (m <= 80) setTimeout(job, 0);
+  };
+  job();
 }
 
 /* ========== 排程器 ========== */
@@ -242,6 +270,27 @@ const visQueue = [];
 function stepDur() {
   const m = METERS[state.meter];
   return 60 / state.bpm / m.spb;
+}
+
+// 立即換和弦：取消已排程的舊和弦、馬上刷一下新和弦，節拍格線不變
+let quietUntil = 0;
+function changeNow() {
+  const now = ctx.currentTime;
+  cutAll(now);
+  const k = visQueue.findIndex((v) => v.t > now);
+  if (k >= 0) {
+    step = visQueue[k].step;
+    nextTime = visQueue[k].t;
+    visQueue.length = k;
+  }
+  const t = now + 0.005;
+  const notes = voicing(current);
+  lastChord = current;
+  if (state.pattern === 'arp') playString(0, notes[0], t, 1);
+  else strum(notes, t, 'D', 1, stepDur());
+  // 太靠近的下一拍就不重複刷，避免連兩下
+  quietUntil = now + Math.min(0.12, stepDur() * 0.6);
+  scheduler();
 }
 
 function scheduleStep(i, t) {
@@ -259,6 +308,7 @@ function scheduleStep(i, t) {
     for (let s = 0; s < 6; s++) muteString(s, t);
     lastChord = chord;
   }
+  if (t < quietUntil) return;
   const isBeat = i % m.spb === 0;
   const accent = i === 0 ? 1 : isBeat ? 0.85 : 0.7;
 
@@ -362,7 +412,7 @@ function pressChord(i) {
   }
   if (same(ch, current) && pending === null) return;
   if (state.change === 'bar') pending = same(ch, current) ? null : ch;
-  else { current = ch; pending = null; }
+  else { current = ch; pending = null; changeNow(); }
   render();
 }
 
