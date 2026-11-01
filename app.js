@@ -509,7 +509,7 @@ Object.keys(METERS).forEach((m) => {
 
 const solButtons = SOLFEGE.map(([name], k) => {
   const b = document.createElement('button');
-  b.innerHTML = '<span class="n">' + name + '</span><span class="d"></span>';
+  b.innerHTML = '<span class="n">' + (k + 1) + '</span><span class="s">' + name + '</span><span class="d"></span>';
   b.addEventListener('pointerdown', (e) => { e.preventDefault(); playSolfege(k); });
   $('solfege').appendChild(b);
   return b;
@@ -589,7 +589,7 @@ function render() {
   const sameAsAbs = state.shift === 0;
   const keyName = keyTable()[state.key][0];
   solButtons.forEach((b, k) => { b.querySelector('.d').textContent = noteName(doPc() + SOLFEGE[k][1]); });
-  $('doLabel').textContent = 'Do = ' + noteName(doPc()) + (state.scale === 'minor' ? '（La = ' + keyName + '）' : '');
+  $('doLabel').textContent = '1 = ' + noteName(doPc()) + (state.scale === 'minor' ? '（6 = ' + keyName.replace('m', '') + '）' : '');
   shiftVal.innerHTML = state.shift === 0
     ? '原調 <small>' + keyName + '</small>'
     : (state.shift > 0 ? '升 ' : '降 ') + Math.abs(state.shift) + ' <small>' + keyName + ' 調</small>';
