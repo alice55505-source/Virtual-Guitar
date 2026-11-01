@@ -104,12 +104,13 @@ try { Object.assign(state, JSON.parse(localStorage.getItem('vg-settings') || '{}
 if (!METERS[state.meter]) state.meter = '4/4';
 if (!CHORD_SETS[state.scale]) state.scale = 'major';
 if (!state.v2) { if (state.change === 'now') state.change = 'beat'; state.v2 = 1; }
+if (state.change !== 'now') state.change = 'beat';
 CHORDS = CHORD_SETS[state.scale];
 state.mod = ''; // 和弦變化列已移除，一律用原和弦
 const save = () => { try { localStorage.setItem('vg-settings', JSON.stringify(state)); } catch (_) {} };
 
 let current = null;   // 正在彈的和弦 {i, mod}
-let pending = null;   // 等下一小節的和弦 {i, mod}
+let pending = null;   // 等下一拍生效的和弦 {i, mod}
 const same = (a, b) => !!a && !!b && a.i === b.i && a.mod === b.mod;
 let playing = false;
 
@@ -342,7 +343,7 @@ function scheduleStep(i, t) {
   const isBeat = i % m.spb === 0;
   if (isBeat) { beatHist.push(t); if (beatHist.length > 16) beatHist.shift(); }
   if (pending !== null) {
-    const due = state.change === 'bar' ? i === 0 : isBeat && t >= pendingAt - 1e-3;
+    const due = isBeat && t >= pendingAt - 1e-3;
     if (due) { current = pending; pending = null; }
   }
   const chord = current;
@@ -464,8 +465,7 @@ function pressChord(i) {
     return;
   }
   if (same(ch, current) && pending === null) return;
-  if (state.change === 'bar') pending = same(ch, current) ? null : ch;
-  else if (state.change === 'now') { current = ch; pending = null; changeNow(); }
+  if (state.change === 'now') { current = ch; pending = null; changeNow(); }
   else {
     // 對齊拍子：剛過拍點不久 → 算那一拍，馬上換；否則等下一拍
     const now = ctx.currentTime;
