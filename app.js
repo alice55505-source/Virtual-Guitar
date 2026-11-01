@@ -98,13 +98,11 @@ const state = {
   meter: '4/4',
   bpm: 80,
   pattern: 'strum',
-  change: 'beat',
 };
 try { Object.assign(state, JSON.parse(localStorage.getItem('vg-settings') || '{}')); } catch (_) {}
 if (!METERS[state.meter]) state.meter = '4/4';
 if (!CHORD_SETS[state.scale]) state.scale = 'major';
-if (!state.v2) { if (state.change === 'now') state.change = 'beat'; state.v2 = 1; }
-if (state.change !== 'now') state.change = 'beat';
+delete state.change; delete state.v2;
 CHORDS = CHORD_SETS[state.scale];
 state.mod = ''; // 和弦變化列已移除，一律用原和弦
 const save = () => { try { localStorage.setItem('vg-settings', JSON.stringify(state)); } catch (_) {} };
@@ -432,7 +430,7 @@ document.addEventListener('visibilitychange', () => {
 
 /* ========== 介面 ========== */
 const $ = (id) => document.getElementById(id);
-const keySel = $('keySel'), scaleSel = $('scaleSel'), patternSel = $('patternSel'), changeSel = $('changeSel');
+const keySel = $('keySel'), scaleSel = $('scaleSel'), patternSel = $('patternSel');
 const bpmVal = $('bpmVal'), bpmUnit = $('bpmUnit');
 const pad = $('pad'), beatsEl = $('beats'), stepsEl = $('steps');
 const chordNameEl = $('chordName'), chordSubEl = $('chordSub'), playBtn = $('playBtn');
@@ -465,8 +463,7 @@ function pressChord(i) {
     return;
   }
   if (same(ch, current) && pending === null) return;
-  if (state.change === 'now') { current = ch; pending = null; changeNow(); }
-  else {
+  {
     // 對齊拍子：剛過拍點不久 → 算那一拍，馬上換；否則等下一拍
     const now = ctx.currentTime;
     const beatDur = stepDur() * METERS[state.meter].spb;
@@ -516,7 +513,6 @@ function render() {
   keySel.value = state.key;
   scaleSel.value = state.scale;
   patternSel.value = state.pattern;
-  changeSel.value = state.change;
   bpmVal.textContent = state.bpm;
   bpmUnit.textContent = METERS[state.meter].unit;
 
@@ -589,7 +585,6 @@ scaleSel.addEventListener('change', () => {
 });
 keySel.addEventListener('change', () => { state.key = +keySel.value; save(); lastChord = null; render(); });
 patternSel.addEventListener('change', () => { state.pattern = patternSel.value; save(); buildSteps(); });
-changeSel.addEventListener('change', () => { state.change = changeSel.value; save(); });
 
 function setBpm(v) {
   state.bpm = Math.max(30, Math.min(240, Math.round(v)));
