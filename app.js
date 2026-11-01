@@ -79,13 +79,13 @@ const keyTable = () => (state.scale === 'minor' ? MINOR_KEYS : MAJOR_KEYS);
 // 拍號：每拍幾個步（八分音符）、幾拍、刷法（B 根：刷低音 3 條弦 / D 下刷 / U 上刷 / - 空）、
 // 分解和弦（弦號：最低音弦算 1，1 = 根音，- = 停）、拍子單位
 const METERS = {
-  '4/4': { spb: 2, beats: 4, strum: 'B-DU-UDU', arp: '1456-454', unit: '♩' },
-  '3/4': { spb: 2, beats: 3, strum: 'B-DUDU', arp: '145654', unit: '♩' },
-  '6/8': { spb: 3, beats: 2, strum: 'B-DUDU', arp: '145654', unit: '♩.' },
-  '3/2': { spb: 4, beats: 3, strum: 'B-DU-UDUD-DU', arp: '145464546454', unit: '𝅗𝅥' },
-  '2/2': { spb: 4, beats: 2, strum: 'B-DU-UDU', arp: '14546454', unit: '𝅗𝅥' },
-  '9/8': { spb: 3, beats: 3, strum: 'BDUDDUDDU', arp: '145654654', unit: '♩.' },
-  '6/4': { spb: 2, beats: 6, strum: 'B-DUDUD-DUDU', arp: '145654145654', unit: '♩' },
+  '4/4': { spb: 2, beats: 4, strum: 'B-DU-UDU', arp: '1456-454', unit: '四分音符' },
+  '3/4': { spb: 2, beats: 3, strum: 'B-DUDU', arp: '145654', unit: '四分音符' },
+  '6/8': { spb: 3, beats: 2, strum: 'B-DUDU', arp: '145654', unit: '附點四分音符' },
+  '3/2': { spb: 4, beats: 3, strum: 'B-DUD-DUD-DU', arp: '145464546454', unit: '二分音符' },
+  '2/2': { spb: 4, beats: 2, strum: 'B-DUD-DU', arp: '14546454', unit: '二分音符' },
+  '9/8': { spb: 3, beats: 3, strum: 'BDUDDUDDU', arp: '145654654', unit: '附點四分音符' },
+  '6/4': { spb: 2, beats: 6, strum: 'B-DUDUD-DUDU', arp: '145654145654', unit: '四分音符' },
 };
 
 /* ========== 狀態 ========== */
