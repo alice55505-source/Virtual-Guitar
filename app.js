@@ -12,8 +12,6 @@ const MINOR_KEYS = [
   ['Cm', 0, FLAT], ['C#m', 1, SHARP], ['Dm', 2, FLAT], ['Ebm', 3, FLAT], ['Em', 4, SHARP], ['Fm', 5, FLAT],
   ['F#m', 6, SHARP], ['Gm', 7, FLAT], ['G#m', 8, SHARP], ['Am', 9, SHARP], ['Bbm', 10, FLAT], ['Bm', 11, SHARP],
 ];
-// 相對音準時的參考調：大調用 C，小調用 Am（C 調的關係小調）
-const REF = { major: 0, minor: 9 };
 
 const QUALITY = {
   '': [0, 4, 7],
@@ -107,7 +105,14 @@ delete state.change; delete state.v2;
 CHORDS = CHORD_SETS[state.scale];
 state.mod = ''; // 和弦變化列已移除，一律用原和弦
 if (state.sheet === null || state.sheet === undefined) state.sheet = state.key;
-if (!['sheet', 'abs', 'rel'].includes(state.mode)) state.mode = 'sheet';
+// 升降 Key：shift = 要彈的調 − 譜上的調（−6 ~ +6 半音）
+if (typeof state.shift !== 'number') {
+  const d = ((state.key - state.sheet) % 12 + 12) % 12;
+  state.shift = d > 6 ? d - 12 : d;
+}
+delete state.mode;
+const syncKey = () => { state.key = ((state.sheet + state.shift) % 12 + 12) % 12; };
+syncKey();
 const save = () => { try { localStorage.setItem('vg-settings', JSON.stringify(state)); } catch (_) {} };
 
 let current = null;   // 正在彈的和弦 {i, mod}
@@ -116,10 +121,10 @@ const same = (a, b) => !!a && !!b && a.i === b.i && a.mod === b.mod;
 let playing = false;
 
 /* ========== 和弦名稱 / 音高 ========== */
-// view: 'sheet' 照譜（譜上的調）/ 'abs' 實際彈的調 / 'rel' C 調（小調 Am）
-function chordName(ch, view) {
+// view: 'sheet' 譜上的和弦名 / 'abs' 實際彈出的和弦名
+function chordName(ch, view = 'sheet') {
   const c = CHORDS[ch.i];
-  const k = keyTable()[view === 'abs' ? state.key : view === 'sheet' ? state.sheet : REF[state.scale]];
+  const k = keyTable()[view === 'abs' ? state.key : state.sheet];
   const q = quality(ch);
   return k[2][(k[1] + c.off) % 12] + (SUFFIX[q] || q);
 }
@@ -434,13 +439,13 @@ document.addEventListener('visibilitychange', () => {
 
 /* ========== 介面 ========== */
 const $ = (id) => document.getElementById(id);
-const keySel = $('keySel'), sheetSel = $('sheetSel'), scaleSel = $('scaleSel'), patternSel = $('patternSel');
+const sheetSel = $('sheetSel'), shiftVal = $('shiftVal'), scaleSel = $('scaleSel'), patternSel = $('patternSel');
 const bpmVal = $('bpmVal'), bpmUnit = $('bpmUnit');
 const pad = $('pad'), beatsEl = $('beats'), stepsEl = $('steps');
 const chordNameEl = $('chordName'), chordSubEl = $('chordSub'), playBtn = $('playBtn');
 
 function buildKeys() {
-  for (const sel of [keySel, sheetSel]) {
+  for (const sel of [sheetSel]) {
     sel.innerHTML = '';
     keyTable().forEach((k, i) => sel.add(new Option(k[0], i)));
   }
@@ -514,18 +519,19 @@ function buildSteps() {
 
 function render() {
   // 模式
-  document.querySelectorAll('#modeSeg button').forEach((b) => b.classList.toggle('on', b.dataset.mode === state.mode));
-  document.querySelector('#modeSeg [data-mode=rel]').textContent = state.scale === 'minor' ? 'Am 調' : 'C 調';
   document.querySelectorAll('#meterSeg button').forEach((b) => b.classList.toggle('on', b.dataset.meter === state.meter));
-  keySel.value = state.key;
   sheetSel.value = state.sheet;
   scaleSel.value = state.scale;
   patternSel.value = state.pattern;
   bpmVal.textContent = state.bpm;
   bpmUnit.textContent = METERS[state.meter].unit;
 
-  const view = state.mode;
-  const sameAsAbs = view === 'abs' || (view === 'sheet' && state.sheet === state.key);
+  const view = 'sheet';
+  const sameAsAbs = state.shift === 0;
+  const keyName = keyTable()[state.key][0];
+  shiftVal.innerHTML = state.shift === 0
+    ? '原調 <small>' + keyName + '</small>'
+    : (state.shift > 0 ? '升 ' : '降 ') + Math.abs(state.shift) + ' <small>' + keyName + ' 調</small>';
   padButtons.forEach((b, i) => {
     const ch = { i, mod: state.mod };
     b.querySelector('.n').textContent = chordName(ch, view);
@@ -542,18 +548,10 @@ function render() {
     chordNameEl.textContent = chordName(show, view);
     chordNameEl.classList.toggle('pending', pending !== null);
   }
-  const keyName = keyTable()[state.key][0];
   const actual = show !== null && !sameAsAbs ? ' ・ 實際 ' + chordName(show, 'abs') : '';
-  if (view === 'rel') {
-    const capo = (state.key - REF[state.scale] + 12) % 12;
-    chordSubEl.textContent = '實際 ' + keyName + ' 調' + (capo ? ' ・ 移調夾第 ' + capo + ' 格' : '') + actual;
-  } else if (view === 'sheet' && state.sheet !== state.key) {
-    const d = (state.key - state.sheet + 12) % 12;
-    const move = d <= 6 ? '升 ' + d + ' 個半音' : '降 ' + (12 - d) + ' 個半音';
-    chordSubEl.textContent = '譜 ' + keyTable()[state.sheet][0] + ' → 實際 ' + keyName + ' 調（' + move + '）' + actual;
-  } else {
-    chordSubEl.textContent = keyName + ' 調';
-  }
+  chordSubEl.textContent = sameAsAbs
+    ? keyName + ' 調'
+    : '譜 ' + keyTable()[state.sheet][0] + ' → 實際 ' + keyName + ' 調' + actual;
 
   playBtn.textContent = playing ? '■ 停止' : '▶ 開始';
   playBtn.classList.toggle('stop', playing);
@@ -581,10 +579,6 @@ function frame() {
 }
 
 /* ========== 事件 ========== */
-$('modeSeg').addEventListener('click', (e) => {
-  const m = e.target.closest('button'); if (!m) return;
-  state.mode = m.dataset.mode; save(); render();
-});
 $('meterSeg').addEventListener('click', (e) => {
   const m = e.target.closest('button'); if (!m) return;
   state.meter = m.dataset.meter; save();
@@ -596,8 +590,14 @@ scaleSel.addEventListener('change', () => {
   CHORDS = CHORD_SETS[state.scale];
   save(); buildKeys(); lastChord = null; render();
 });
-keySel.addEventListener('change', () => { state.key = +keySel.value; save(); lastChord = null; render(); });
-sheetSel.addEventListener('change', () => { state.sheet = +sheetSel.value; save(); render(); });
+sheetSel.addEventListener('change', () => { state.sheet = +sheetSel.value; syncKey(); save(); lastChord = null; render(); });
+function setShift(v) {
+  state.shift = Math.max(-6, Math.min(6, v));
+  syncKey(); save(); lastChord = null; render();
+}
+$('keyDown').addEventListener('click', () => setShift(state.shift - 1));
+$('keyUp').addEventListener('click', () => setShift(state.shift + 1));
+shiftVal.addEventListener('click', () => setShift(0));
 patternSel.addEventListener('change', () => { state.pattern = patternSel.value; save(); buildSteps(); });
 
 function setBpm(v) {

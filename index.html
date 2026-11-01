@@ -17,11 +17,6 @@
 <body>
   <header class="top">
     <h1>吉他伴奏</h1>
-    <div class="seg" id="modeSeg" role="group" aria-label="顯示模式">
-      <button data-mode="sheet">照譜</button>
-      <button data-mode="abs">實際和弦</button>
-      <button data-mode="rel">C 調</button>
-    </div>
   </header>
 
   <section class="controls">
@@ -29,10 +24,6 @@
       <label class="field">
         <span>譜上的調</span>
         <select id="sheetSel"></select>
-      </label>
-      <label class="field">
-        <span>要彈的調</span>
-        <select id="keySel"></select>
       </label>
       <label class="field">
         <span>大/小調</span>
@@ -49,6 +40,15 @@
           <option value="arp">分解和弦</option>
         </select>
       </label>
+    </div>
+
+    <div class="field">
+      <span>升降 Key（點中間回原調）</span>
+      <div class="tempo keyshift">
+        <button id="keyDown">降 Key</button>
+        <button id="shiftVal" class="shift-val">原調</button>
+        <button id="keyUp">升 Key</button>
+      </div>
     </div>
 
     <div class="field">
