@@ -98,11 +98,12 @@ const state = {
   meter: '4/4',
   bpm: 80,
   pattern: 'strum',
-  change: 'now',
+  change: 'beat',
 };
 try { Object.assign(state, JSON.parse(localStorage.getItem('vg-settings') || '{}')); } catch (_) {}
 if (!METERS[state.meter]) state.meter = '4/4';
 if (!CHORD_SETS[state.scale]) state.scale = 'major';
+if (!state.v2) { if (state.change === 'now') state.change = 'beat'; state.v2 = 1; }
 CHORDS = CHORD_SETS[state.scale];
 if (!MODS.some((m) => m[0] === state.mod)) state.mod = '';
 const save = () => { try { localStorage.setItem('vg-settings', JSON.stringify(state)); } catch (_) {} };
@@ -221,7 +222,7 @@ function playString(s, midi, t, vel) {
   strings[s] = { src, gain: g, vel: vel * 0.22 };
   const now = ctx.currentTime;
   for (let k = voices.length - 1; k >= 0; k--) if (voices[k].t + 3 < now) voices.splice(k, 1);
-  voices.push({ src, gain: g, t });
+  voices.push({ src, gain: g, t, s, vel: vel * 0.22 });
 }
 
 // 立刻消掉所有聲音：已在響的淡出，還沒開始的（排程中的舊和弦）直接取消
@@ -282,17 +283,49 @@ function stepDur() {
   return 60 / state.bpm / m.spb;
 }
 
-// 立即換和弦：取消已排程的舊和弦、馬上刷一下新和弦，節拍格線不變
-let quietUntil = 0;
-function changeNow() {
-  const now = ctx.currentTime;
-  cutAll(now);
-  const k = visQueue.findIndex((v) => v.t > now);
+// 已排程的拍點時間（用來判斷按鍵最接近哪一拍）
+let beatHist = [];
+let pendingAt = 0; // 對齊拍子模式：pending 和弦生效的時間
+
+// 取消 time 之後已排程的音，並把排程退回到那個時間點（節拍格線不變）
+function rewindFrom(time) {
+  for (let k = voices.length - 1; k >= 0; k--) {
+    const v = voices[k];
+    if (v.t >= time - 1e-4) {
+      try { v.src.stop(0); } catch (_) {}
+      v.gain.disconnect();
+      voices.splice(k, 1);
+    }
+  }
+  strings.fill(null);
+  for (const v of voices) if (!strings[v.s] || strings[v.s].t <= v.t) strings[v.s] = v;
+  const k = visQueue.findIndex((v) => v.t >= time - 1e-4);
   if (k >= 0) {
     step = visQueue[k].step;
     nextTime = visQueue[k].t;
     visQueue.length = k;
   }
+  beatHist = beatHist.filter((b) => b < time - 1e-4);
+}
+
+// 下一拍的時間
+function nextBeatTime(now) {
+  const fut = beatHist.filter((b) => b > now);
+  if (fut.length) return Math.min(...fut);
+  const spb = METERS[state.meter].spb;
+  return nextTime + ((spb - (step % spb)) % spb) * stepDur();
+}
+function lastBeatTime(now) {
+  const past = beatHist.filter((b) => b <= now);
+  return past.length ? Math.max(...past) : -Infinity;
+}
+
+// 立即換和弦：取消已排程的舊和弦、馬上刷一下新和弦，節拍格線不變
+let quietUntil = 0;
+function changeNow() {
+  const now = ctx.currentTime;
+  rewindFrom(now);
+  cutAll(now);
   const t = now + 0.005;
   const notes = voicing(current);
   lastChord = current;
@@ -306,21 +339,29 @@ function changeNow() {
 function scheduleStep(i, t) {
   const m = METERS[state.meter];
   const dur = stepDur();
-  if (i === 0 && pending !== null) {
-    current = pending; pending = null;
+  const isBeat = i % m.spb === 0;
+  if (isBeat) { beatHist.push(t); if (beatHist.length > 16) beatHist.shift(); }
+  if (pending !== null) {
+    const due = state.change === 'bar' ? i === 0 : isBeat && t >= pendingAt - 1e-3;
+    if (due) { current = pending; pending = null; }
   }
   const chord = current;
   visQueue.push({ t, step: i, chord });
   if (chord === null) return;
 
   const notes = voicing(chord);
+  const accent = i === 0 ? 1 : isBeat ? 0.85 : 0.7;
   if (!same(lastChord, chord)) {
     for (let s = 0; s < 6; s++) muteString(s, t);
     lastChord = chord;
+    // 換和弦的那一拍一定從根音完整下刷（就算刷法這一格是空拍）
+    if (t >= quietUntil) {
+      if (state.pattern === 'arp') playString(0, notes[0], t, 1);
+      else strum(notes, t, 'D', Math.max(accent, 0.9), dur, true);
+    }
+    return;
   }
   if (t < quietUntil) return;
-  const isBeat = i % m.spb === 0;
-  const accent = i === 0 ? 1 : isBeat ? 0.85 : 0.7;
 
   if (state.pattern === 'strum') {
     const c = m.strum[i];
@@ -356,6 +397,8 @@ function start() {
   if (current === null) current = { i: 0, mod: state.mod };
   pending = null;
   step = 0;
+  beatHist = [];
+  quietUntil = 0;
   lastChord = null;
   nextTime = ctx.currentTime + 0.06;
   playing = true;
@@ -422,7 +465,23 @@ function pressChord(i) {
   }
   if (same(ch, current) && pending === null) return;
   if (state.change === 'bar') pending = same(ch, current) ? null : ch;
-  else { current = ch; pending = null; changeNow(); }
+  else if (state.change === 'now') { current = ch; pending = null; changeNow(); }
+  else {
+    // 對齊拍子：剛過拍點不久 → 算那一拍，馬上換；否則等下一拍
+    const now = ctx.currentTime;
+    const beatDur = stepDur() * METERS[state.meter].spb;
+    const grace = Math.min(0.18, beatDur * 0.3);
+    if (now - lastBeatTime(now) <= grace) {
+      current = ch; pending = null; changeNow();
+    } else if (same(ch, current)) {
+      if (pending) { pending = null; rewindFrom(nextBeatTime(now)); }
+    } else {
+      pendingAt = nextBeatTime(now);
+      pending = ch;
+      rewindFrom(pendingAt);
+      scheduler();
+    }
+  }
   render();
 }
 
@@ -516,7 +575,7 @@ function frame() {
     if (changed && item.step !== lastVisStep) {
       lastVisStep = item.step;
       drawBeat(item.step);
-      if (item.step === 0) render(); // 下一小節換和弦時更新畫面
+      if (item.step % METERS[state.meter].spb === 0) render(); // 換和弦生效時更新畫面
     }
   }
   requestAnimationFrame(frame);
@@ -530,7 +589,7 @@ $('modeSeg').addEventListener('click', (e) => {
 $('meterSeg').addEventListener('click', (e) => {
   const m = e.target.closest('button'); if (!m) return;
   state.meter = m.dataset.meter; save();
-  if (playing) { step = 0; visQueue.length = 0; }
+  if (playing) { step = 0; visQueue.length = 0; beatHist = []; }
   buildSteps(); render();
 });
 scaleSel.addEventListener('change', () => {
