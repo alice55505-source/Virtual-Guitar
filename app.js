@@ -3,34 +3,59 @@
 /* ========== 樂理資料 ========== */
 const SHARP = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
 const FLAT = ['C', 'Db', 'D', 'Eb', 'E', 'F', 'Gb', 'G', 'Ab', 'A', 'Bb', 'B'];
-// 調：名稱、主音半音數、用升記號或降記號拼音
-const KEYS = [
+// 調：名稱、主音半音數、用升記號或降記號拼音（依主音 0~11 排序）
+const MAJOR_KEYS = [
   ['C', 0, FLAT], ['Db', 1, FLAT], ['D', 2, SHARP], ['Eb', 3, FLAT], ['E', 4, SHARP], ['F', 5, FLAT],
   ['F#', 6, SHARP], ['G', 7, SHARP], ['Ab', 8, FLAT], ['A', 9, SHARP], ['Bb', 10, FLAT], ['B', 11, SHARP],
 ];
+const MINOR_KEYS = [
+  ['Cm', 0, FLAT], ['C#m', 1, SHARP], ['Dm', 2, FLAT], ['Ebm', 3, FLAT], ['Em', 4, SHARP], ['Fm', 5, FLAT],
+  ['F#m', 6, SHARP], ['Gm', 7, FLAT], ['G#m', 8, SHARP], ['Am', 9, SHARP], ['Bbm', 10, FLAT], ['Bm', 11, SHARP],
+];
+// 相對音準時的參考調：大調用 C，小調用 Am（C 調的關係小調）
+const REF = { major: 0, minor: 9 };
 
 const QUALITY = {
   '': [0, 4, 7],
   m: [0, 3, 7],
   '7': [0, 4, 7, 10],
   sus4: [0, 5, 7],
+  dim: [0, 3, 6],
 };
 
-// 和弦鍵：級數、相對主音的半音、性質（以 C 調表示）
-const CHORDS = [
-  { deg: 'I', off: 0, q: '', dia: true },
-  { deg: 'ii', off: 2, q: 'm', dia: true },
-  { deg: 'iii', off: 4, q: 'm', dia: true },
-  { deg: 'IV', off: 5, q: '', dia: true },
-  { deg: 'V', off: 7, q: '', dia: true },
-  { deg: 'vi', off: 9, q: 'm', dia: true },
-  { deg: 'Vsus4', off: 7, q: 'sus4' },
-  { deg: 'V7', off: 7, q: '7' },
-  { deg: 'III', off: 4, q: '' },
-  { deg: 'II', off: 2, q: '' },
-  { deg: '♭VII', off: 10, q: '' },
-  { deg: 'iv', off: 5, q: 'm' },
-];
+// 和弦鍵：級數、相對主音的半音、性質
+const CHORD_SETS = {
+  major: [
+    { deg: 'I', off: 0, q: '', dia: true },
+    { deg: 'ii', off: 2, q: 'm', dia: true },
+    { deg: 'iii', off: 4, q: 'm', dia: true },
+    { deg: 'IV', off: 5, q: '', dia: true },
+    { deg: 'V', off: 7, q: '', dia: true },
+    { deg: 'vi', off: 9, q: 'm', dia: true },
+    { deg: 'Vsus4', off: 7, q: 'sus4' },
+    { deg: 'V7', off: 7, q: '7' },
+    { deg: 'III', off: 4, q: '' },
+    { deg: 'II', off: 2, q: '' },
+    { deg: '♭VII', off: 10, q: '' },
+    { deg: 'iv', off: 5, q: 'm' },
+  ],
+  minor: [
+    { deg: 'i', off: 0, q: 'm', dia: true },
+    { deg: '♭III', off: 3, q: '', dia: true },
+    { deg: 'iv', off: 5, q: 'm', dia: true },
+    { deg: 'v', off: 7, q: 'm', dia: true },
+    { deg: '♭VI', off: 8, q: '', dia: true },
+    { deg: '♭VII', off: 10, q: '', dia: true },
+    { deg: 'V', off: 7, q: '' },
+    { deg: 'V7', off: 7, q: '7' },
+    { deg: 'Vsus4', off: 7, q: 'sus4' },
+    { deg: 'ii°', off: 2, q: 'dim' },
+    { deg: 'IV', off: 5, q: '' },
+    { deg: 'I', off: 0, q: '' },
+  ],
+};
+let CHORDS = CHORD_SETS.major;
+const keyTable = () => (state.scale === 'minor' ? MINOR_KEYS : MAJOR_KEYS);
 
 // 拍號：每拍幾個步（八分音符）、幾拍、刷法（D 下刷 / U 上刷 / - 空）、拍子單位
 const METERS = {
@@ -47,6 +72,7 @@ const METERS = {
 const state = {
   mode: 'abs',
   key: 0,
+  scale: 'major',
   meter: '4/4',
   bpm: 80,
   pattern: 'strum',
@@ -54,6 +80,8 @@ const state = {
 };
 try { Object.assign(state, JSON.parse(localStorage.getItem('vg-settings') || '{}')); } catch (_) {}
 if (!METERS[state.meter]) state.meter = '4/4';
+if (!CHORD_SETS[state.scale]) state.scale = 'major';
+CHORDS = CHORD_SETS[state.scale];
 const save = () => { try { localStorage.setItem('vg-settings', JSON.stringify(state)); } catch (_) {} };
 
 let current = null;   // 正在彈的和弦 index
@@ -63,11 +91,10 @@ let playing = false;
 /* ========== 和弦名稱 / 音高 ========== */
 function chordName(i, transpose) {
   const c = CHORDS[i];
-  const k = KEYS[transpose ? state.key : 0];
-  const names = k[2];
-  return names[(k[1] + c.off) % 12] + c.q;
+  const k = keyTable()[transpose ? state.key : REF[state.scale]];
+  return k[2][(k[1] + c.off) % 12] + c.q;
 }
-function rootPc(i) { return (KEYS[state.key][1] + CHORDS[i].off) % 12; }
+function rootPc(i) { return (state.key + CHORDS[i].off) % 12; }
 
 // 產生 6 弦的 MIDI 音高：低音根音在 E2~D#3，往上依序疊和弦音（間隔 ≥3 半音，像吉他弦距）
 function voicing(i) {
@@ -265,12 +292,16 @@ document.addEventListener('visibilitychange', () => {
 
 /* ========== 介面 ========== */
 const $ = (id) => document.getElementById(id);
-const keySel = $('keySel'), patternSel = $('patternSel'), changeSel = $('changeSel');
+const keySel = $('keySel'), scaleSel = $('scaleSel'), patternSel = $('patternSel'), changeSel = $('changeSel');
 const bpm = $('bpm'), bpmVal = $('bpmVal'), bpmUnit = $('bpmUnit');
 const pad = $('pad'), beatsEl = $('beats'), stepsEl = $('steps');
 const chordNameEl = $('chordName'), chordSubEl = $('chordSub'), playBtn = $('playBtn');
 
-KEYS.forEach((k, i) => keySel.add(new Option(k[0] + ' 調', i)));
+function buildKeys() {
+  keySel.innerHTML = '';
+  keyTable().forEach((k, i) => keySel.add(new Option(k[0], i)));
+}
+buildKeys();
 Object.keys(METERS).forEach((m) => {
   const b = document.createElement('button');
   b.textContent = m; b.dataset.meter = m;
@@ -325,6 +356,7 @@ function render() {
   document.querySelectorAll('#modeSeg button').forEach((b) => b.classList.toggle('on', b.dataset.mode === state.mode));
   document.querySelectorAll('#meterSeg button').forEach((b) => b.classList.toggle('on', b.dataset.meter === state.meter));
   keySel.value = state.key;
+  scaleSel.value = state.scale;
   patternSel.value = state.pattern;
   changeSel.value = state.change;
   bpm.value = state.bpm;
@@ -347,11 +379,11 @@ function render() {
     chordNameEl.textContent = chordName(show, abs);
     chordNameEl.classList.toggle('pending', pending !== null);
   }
-  const keyName = KEYS[state.key][0];
+  const keyName = keyTable()[state.key][0];
   if (abs) {
     chordSubEl.textContent = keyName + ' 調';
   } else {
-    const capo = KEYS[state.key][1];
+    const capo = (state.key - REF[state.scale] + 12) % 12;
     chordSubEl.textContent = '實際 ' + keyName + ' 調' + (capo ? ' ・ 移調夾第 ' + capo + ' 格' : '');
     if (show !== null) chordSubEl.textContent += ' ・ 實際 ' + chordName(show, true);
   }
@@ -391,6 +423,11 @@ $('meterSeg').addEventListener('click', (e) => {
   state.meter = m.dataset.meter; save();
   if (playing) { step = 0; visQueue.length = 0; }
   buildSteps(); render();
+});
+scaleSel.addEventListener('change', () => {
+  state.scale = scaleSel.value;
+  CHORDS = CHORD_SETS[state.scale];
+  save(); buildKeys(); lastChord = null; render();
 });
 keySel.addEventListener('change', () => { state.key = +keySel.value; save(); lastChord = null; render(); });
 patternSel.addEventListener('change', () => { state.pattern = patternSel.value; save(); buildSteps(); });
