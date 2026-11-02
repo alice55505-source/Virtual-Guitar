@@ -174,7 +174,8 @@ function voicing(ch) {
 }
 
 /* ========== 音訊：Karplus-Strong 撥弦 ========== */
-let ctx = null, master = null;
+let ctx = null, master = null, makeup = null, audioOut = null;
+let MAKEUP = 2.6;
 const bufCache = new Map();
 const strings = new Array(6).fill(null); // 每條弦目前發聲中的 {src, gain}
 const voices = []; // 所有已排程的音 {src, gain, t}
@@ -188,10 +189,18 @@ function initAudio() {
   low.type = 'lowshelf'; low.frequency.value = 160; low.gain.value = 5;
   const air = ctx.createBiquadFilter();
   air.type = 'highshelf'; air.frequency.value = 4000; air.gain.value = -6;
+  // 音量：先壓縮讓大小聲平均，再補增益拉到接近最大，最後限幅避免破音
   const comp = ctx.createDynamicsCompressor();
-  comp.threshold.value = -14; comp.ratio.value = 4;
+  comp.threshold.value = -24; comp.knee.value = 10; comp.ratio.value = 6;
+  comp.attack.value = 0.003; comp.release.value = 0.2;
+  makeup = ctx.createGain(); makeup.gain.value = MAKEUP;
+  const limiter = ctx.createDynamicsCompressor();
+  limiter.threshold.value = -3; limiter.knee.value = 0; limiter.ratio.value = 20;
+  limiter.attack.value = 0.001; limiter.release.value = 0.1;
   master = ctx.createGain(); master.gain.value = 0.8;
-  master.connect(low); low.connect(body); body.connect(air); air.connect(comp); comp.connect(ctx.destination);
+  master.connect(low); low.connect(body); body.connect(air); air.connect(comp);
+  comp.connect(makeup); makeup.connect(limiter); limiter.connect(ctx.destination);
+  audioOut = limiter;
   prewarm();
 }
 
