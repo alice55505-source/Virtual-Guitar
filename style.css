@@ -204,3 +204,9 @@ body.score-mode .play { height: 46px; font-size: 18px; }
 .my-row { display: flex; gap: 6px; }
 .my-open { flex: 1; text-align: left; border: 0; border-radius: 8px; background: var(--panel2); padding: 10px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .my-del { border: 0; border-radius: 8px; background: #3a2526; color: #ffb3b0; padding: 0 12px; }
+.search-results { display: grid; gap: 6px; max-height: 45vh; overflow: auto; }
+.search-results:empty { display: none !important; }
+.search-hit { text-align: left; border: 0; border-radius: 8px; background: var(--panel2); padding: 8px 10px; display: grid; gap: 3px; }
+.hit-head { font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.hit-snip { font-size: 13px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.hit-snip mark { background: var(--accent2); color: #1b1408; border-radius: 3px; }

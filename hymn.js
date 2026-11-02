@@ -252,7 +252,8 @@ function renderPicker() {
   if (my) renderMyList();
   $('hymnFu').style.display = pickCat === 'db' ? '' : 'none';
   $('hymnFu').classList.toggle('on', hasFu);
-  $('hymnNum').placeholder = hasFu ? '附詩歌 1～6' : '輸入詩歌編號';
+  $('hymnNum').placeholder = hasFu ? '附詩歌 1～6' : '編號，或歌名／歌詞';
+  $('hymnResults').style.display = my ? 'none' : '';
   $('hymnRecentWrap').style.display = recent.length ? '' : 'none';
 }
 
@@ -284,8 +285,74 @@ function renderMyList() {
   });
 }
 
+/* ---------- 搜尋歌名／歌詞（同一個輸入框：純數字＝編號，其他＝搜尋） ---------- */
+let lyricsIdx = null, lyricsLoading = null, searchTimer = null;
+const normText = (s) => s2t(s || '').replace(/[\s，。；：！？、,.;:!?'"‘’“”「」『』—－\-–（）()＜＞《》…·~～]/g, '');
+function loadLyricsIndex() {
+  if (lyricsIdx) return Promise.resolve(lyricsIdx);
+  if (!lyricsLoading) {
+    lyricsLoading = fetch(HYMN_TW + 'lyrics-index.txt').then((r) => r.text()).then((txt) => {
+      lyricsIdx = txt.trim().split('\n').map((line) => {
+        const [cat, num, title, ...rest] = line.split('|');
+        const body = rest.join('|');
+        return { cat, num: +num, title, body, nt: normText(title), nb: normText(body) };
+      }).filter((h) => HYMN_CATS[h.cat] && h.num);
+      return lyricsIdx;
+    }).catch(() => { lyricsLoading = null; return null; });
+  }
+  return lyricsLoading;
+}
+
+async function runSearch() {
+  const raw = $('hymnNum').value.trim();
+  const box = $('hymnResults');
+  if (!raw || /^\d+$/.test(raw)) { box.innerHTML = ''; return; }
+  const q = normText(raw);
+  if (!q) { box.innerHTML = ''; return; }
+  box.innerHTML = '<div class="picker-note">搜尋中…</div>';
+  const idx = await loadLyricsIndex();
+  if ($('hymnNum').value.trim() !== raw) return; // 已經又改字了
+  if (!idx) { box.innerHTML = '<div class="picker-note">歌詞索引載入失敗，請確認網路</div>'; return; }
+  const hits = [];
+  myList.forEach((m) => { if (normText(m.name).includes(q)) hits.push({ cat: 'my', num: m.id, title: m.name, score: 0 }); });
+  for (const h of idx) {
+    let score = -1, snip = '';
+    if (h.nt.includes(q)) score = 1;
+    else {
+      const k = h.nb.indexOf(q);
+      if (k >= 0) { score = 2; snip = h.nb.slice(Math.max(0, k - 8), k + q.length + 12); }
+    }
+    if (score < 0) continue;
+    hits.push({ cat: h.cat, num: h.num, title: h.title, snip, score: score + (h.cat === pickCat ? 0 : 0.5) });
+  }
+  hits.sort((a, b) => a.score - b.score);
+  box.innerHTML = hits.length ? '' : '<div class="picker-note">找不到「' + raw + '」</div>';
+  hits.slice(0, 60).forEach((h) => {
+    const b = document.createElement('button');
+    b.className = 'search-hit';
+    const head = document.createElement('div');
+    head.className = 'hit-head';
+    head.textContent = (h.cat === 'my' ? '我的 ' : hymnLabel(h.cat, h.num) + ' ') + (h.cat === 'my' ? h.title : h.title);
+    b.appendChild(head);
+    if (h.snip) {
+      const sn = document.createElement('div');
+      sn.className = 'hit-snip';
+      const k = h.snip.indexOf(q);
+      sn.append('…' + h.snip.slice(0, k));
+      const mk = document.createElement('mark'); mk.textContent = q; sn.append(mk);
+      sn.append(h.snip.slice(k + q.length) + '…');
+      b.appendChild(sn);
+    }
+    b.onclick = () => { $('hymnNum').value = ''; box.innerHTML = ''; openHymn(h.cat, h.num); };
+    box.appendChild(b);
+  });
+  if (hits.length > 60) box.insertAdjacentHTML('beforeend', '<div class="picker-note">只顯示前 60 筆，請多打幾個字</div>');
+}
+
 function submitPicker() {
-  const n = parseInt($('hymnNum').value, 10);
+  const raw = $('hymnNum').value.trim();
+  if (raw && !/^\d+$/.test(raw)) { clearTimeout(searchTimer); runSearch(); return; }
+  const n = parseInt(raw, 10);
   if (!n || n < 1) { $('hymnNum').focus(); return; }
   const fu = hasFu && pickCat === 'db';
   if (fu && n > 6) { alert('大本附詩歌編號為 1 至 6'); return; }
@@ -308,6 +375,7 @@ $('hymnPickerClose').addEventListener('click', closePicker);
 $('hymnGo').addEventListener('click', submitPicker);
 $('hymnFu').addEventListener('click', () => { hasFu = !hasFu; renderPicker(); $('hymnNum').focus(); });
 $('hymnNum').addEventListener('keydown', (e) => { if (e.key === 'Enter') submitPicker(); });
+$('hymnNum').addEventListener('input', () => { clearTimeout(searchTimer); searchTimer = setTimeout(runSearch, 300); });
 $('hymnPicker').addEventListener('click', (e) => { if (e.target.id === 'hymnPicker') closePicker(); });
 $('hymnClose').addEventListener('click', closeHymn);
 $('hymnSwitch').addEventListener('click', openPicker);

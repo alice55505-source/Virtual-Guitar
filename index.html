@@ -109,9 +109,10 @@
       <div id="hymnCats" class="seg wrap picker-cats"></div>
       <div class="picker-input" id="pickerNum">
         <button id="hymnFu" class="fu">附</button>
-        <input id="hymnNum" type="number" inputmode="numeric" min="1" placeholder="輸入詩歌編號">
+        <input id="hymnNum" type="search" enterkeyhint="search" autocomplete="off" placeholder="編號，或歌名／歌詞">
         <button id="hymnGo">開啟</button>
       </div>
+      <div id="hymnResults" class="search-results"></div>
       <div id="myWrap" style="display:none">
         <button id="myImport" class="my-import">＋ 匯入樂譜圖片</button>
         <input id="myFile" type="file" accept="image/*" multiple hidden>
