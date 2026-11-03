@@ -204,6 +204,36 @@ function initAudio() {
   prewarm();
 }
 
+/* iPhone：
+ * 1. 只有「放開手指」(touchend/click) 才算使用者操作，按下(pointerdown)時開的聲音會被擋住，
+ *    所以在每次放開時把聲音解鎖（resume），按下時排好的音就會出來。
+ * 2. 靜音開關打開時網頁聲音會被靜音：新版 iOS 用 audioSession 設成「播放」；
+ *    舊版 iOS 播一段無聲的 <audio> 讓系統改用媒體音量。
+ */
+const SILENT_WAV = 'data:audio/wav;base64,UklGRkQDAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YSADAACAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgA==';
+let silentEl = null;
+function unlockAudio() {
+  try { if (navigator.audioSession) navigator.audioSession.type = 'playback'; } catch (_) {}
+  initAudio();
+  if (ctx.state !== 'running') ctx.resume().catch(() => {});
+  try {
+    const b = ctx.createBuffer(1, 1, 22050), src = ctx.createBufferSource();
+    src.buffer = b; src.connect(ctx.destination); src.start(0);
+  } catch (_) {}
+  if (!navigator.audioSession && !silentEl && /iPhone|iPad|iPod|Macintosh/.test(navigator.userAgent) && 'ontouchend' in document) {
+    silentEl = new Audio(SILENT_WAV);
+    silentEl.loop = true;
+    silentEl.setAttribute('playsinline', '');
+    silentEl.play().catch(() => { silentEl = null; });
+  }
+}
+['touchend', 'click', 'keydown'].forEach((ev) => document.addEventListener(ev, unlockAudio, { capture: true, passive: true }));
+// 從背景回來時 iOS 會把聲音暫停（interrupted），回來就恢復
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible' && ctx && ctx.state !== 'running') ctx.resume().catch(() => {});
+});
+try { if (navigator.audioSession) navigator.audioSession.type = 'playback'; } catch (_) {}
+
 function pluckBuffer(midi) {
   if (bufCache.has(midi)) return bufCache.get(midi);
   const sr = ctx.sampleRate;
