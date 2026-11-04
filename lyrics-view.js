@@ -192,22 +192,42 @@ function renderLyrics() {
     : '<b>只改這支手機</b>：點字加和弦、點和弦修改，不影響別人。<button id="lyrReset">還原</button>') + '</div>');
   else if (hymn.lyr.source === 'mine') box.insertAdjacentHTML('beforeend', '<div class="lyr-tip">這首用的是你在這支手機改的和弦。</div>');
   else if (hymn.lyr.auto) box.insertAdjacentHTML('beforeend', '<div class="lyr-tip">和弦位置是自動對的，有錯可按「✎ 改和弦」修正。點和弦就會彈。</div>');
-  blocks.forEach((b) => {
+  // 每一節共用第一節的和弦：照「第幾行、行內第幾個字」對；某一行字數不同就照比例對，避免整節錯位
+  const lineLens = (b) => b.lines.map((l) => l.split('').filter(isHan).length);
+  const ref = { verse: blocks.find((b) => !b.chorus), chorus: blocks.find((b) => b.chorus) };
+  // 只有一段副歌、有好幾節：每一節後面都接副歌（點一下換下一個和弦也照這個順序走）
+  const verses = blocks.filter((b) => !b.chorus), choruses = blocks.filter((b) => b.chorus);
+  const shown = choruses.length === 1 && verses.length > 1 ? verses.flatMap((v) => [v, choruses[0]]) : blocks;
+  shown.forEach((b) => {
     const part = b.chorus ? 'chorus' : 'verse';
     const bm = map[part] || {};
+    const rb = ref[part];
+    const rl = rb ? lineLens(rb) : [], bl = lineLens(b);
+    // 總字數一樣：直接照順序（各節分行方式可能不同）；總字數不同且行數一樣：才逐行對
+    const sum = (x) => x.reduce((p, q) => p + q, 0);
+    const perLine = rb && rb !== b && sum(rl) !== sum(bl) && rl.length === bl.length;
+    const rStart = rl.map((_, i) => rl.slice(0, i).reduce((x, y) => x + y, 0));
+    const refIndex = (li, j, seqK) => {
+      if (!perLine) return seqK;
+      const a = rl[li], n = bl[li];
+      if (!a) return seqK;
+      return rStart[li] + (a === n ? j : Math.min(a - 1, Math.round(j * (a - 1) / Math.max(1, n - 1))));
+    };
     const el = document.createElement('div');
     el.className = 'lyr-block' + (b.chorus ? ' chorus' : '');
     if (b.label) el.insertAdjacentHTML('beforeend', '<div class="lyr-label">' + (b.chorus ? '副歌' : b.label) + '</div>');
     let k = 0;
-    b.lines.forEach((line) => {
+    b.lines.forEach((line, li) => {
       const ln = document.createElement('div');
       ln.className = 'lyr-line';
+      let j = 0;
       for (const ch of line) {
         const cell = document.createElement('span');
         cell.className = 'lc';
         if (isHan(ch)) {
-          const c = bm[k];
-          cell.dataset.part = part; cell.dataset.k = k;
+          const rk = refIndex(li, j++, k);
+          const c = bm[rk];
+          cell.dataset.part = part; cell.dataset.k = rk;
           if (c) { cell.dataset.seq = hymn.lyr.seq.length; hymn.lyr.seq.push(c); }
           cell.innerHTML = '<span class="chip' + (c ? '' : ' empty') + '">' + (c ? chordName(c) : '') + '</span><span class="t"></span>';
           cell.querySelector('.t').textContent = ch;
