@@ -86,10 +86,11 @@ const CHORD_SETS = {
   ],
 };
 let CHORDS = CHORD_SETS.major;
-// 按鍵排法：'common' 照常用度（上面的排法）；'seq' 照順序（根音由低到高，同根音：調內和弦在前，再大、小、sus4、7）
+// 按鍵排法：'common' 照常用度（上面的排法）；'basic' 只留 6 個基礎和弦；'seq' 照順序（根音由低到高，同根音：調內和弦在前，再大、小、sus4、7）
 const Q_ORDER = { '': 1, m: 2, sus4: 3, '7': 4 };
 function chordSet() {
   const base = CHORD_SETS[state.scale];
+  if (state.padOrder === 'basic') return base.slice(0, 6); // 只留調內 6 個基礎和弦
   if (state.padOrder !== 'seq') return base;
   const dia = state.scale === 'minor' ? { 0: 'm', 3: '', 5: 'm', 7: 'm', 8: '', 10: '' } : { 0: '', 2: 'm', 4: 'm', 5: '', 7: '', 9: 'm' };
   const rank = (c) => (dia[c.off] === c.q ? 0 : Q_ORDER[c.q] || 9);
