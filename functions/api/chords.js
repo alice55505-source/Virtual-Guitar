@@ -4,7 +4,7 @@
 // DELETE /api/chords?song=db15  (X-Edit-Key) → 刪除（回到自動對位）
 // 需要在 Pages 專案設定 KV 綁定，變數名稱 CHORDS
 // 編輯密碼：只存雜湊值，不存密碼本身
-const HASH = '6fb09b25d1fe31da77349bba54a4cd722b2c967aa1fe95a3f4fbafec41ca43c2';
+const HASH = 'c8a557906020b7e6636d9efc989ff9c3db52e225be8222620309d69bed2b54d5';
 
 async function checkKey(pw) {
   if (!pw) return false;

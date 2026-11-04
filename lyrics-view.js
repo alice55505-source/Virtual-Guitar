@@ -70,7 +70,7 @@ const lyrStoreKey = () => 'vg-cl-' + hymn.cat + hymn.num;
 const songId = () => hymn.cat + hymn.num;
 const readCache = () => { try { return JSON.parse(localStorage.getItem(lyrStoreKey()) || 'null'); } catch (_) { return null; } };
 const writeCache = (d) => { try { if (d) localStorage.setItem(lyrStoreKey(), JSON.stringify(d)); else localStorage.removeItem(lyrStoreKey()); } catch (_) {} };
-let editKey = (() => { try { return localStorage.getItem('vg-edit-key') || ''; } catch (_) { return ''; } })();
+let editKey = (() => { try { return localStorage.getItem('vg-edit-key2') || ''; } catch (_) { return ''; } })();
 
 // 讀雲端：有 → 用雲端並快取；雲端沒有 → 只保留舊版「只存在手機」的修改；連不到 → 用快取
 async function loadSavedMap() {
@@ -92,7 +92,7 @@ async function saveMap() {
   const data = { map: hymn.lyr.map, sheet: hymn.lyr.sheet };
   try {
     const r = await fetch('api/chords?song=' + songId(), { method: 'PUT', headers: { 'X-Edit-Key': editKey, 'content-type': 'application/json' }, body: JSON.stringify(data) });
-    if (r.status === 401) { editKey = ''; try { localStorage.removeItem('vg-edit-key'); } catch (_) {} alert('編輯密碼錯誤，請重新輸入'); return false; }
+    if (r.status === 401) { editKey = ''; try { localStorage.removeItem('vg-edit-key2'); } catch (_) {} alert('編輯密碼錯誤，請重新輸入'); return false; }
     if (!r.ok) throw new Error(r.status);
     data.updated = new Date().toISOString();
     writeCache(data);
@@ -115,7 +115,7 @@ async function unlockEdit() {
     if (!r.ok) throw new Error(r.status);
   } catch (_) { alert('連不到雲端，暫時不能修改'); return false; }
   editKey = pw;
-  try { localStorage.setItem('vg-edit-key', pw); } catch (_) {}
+  try { localStorage.setItem('vg-edit-key2', pw); } catch (_) {}
   return true;
 }
 
