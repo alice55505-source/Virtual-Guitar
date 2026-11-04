@@ -570,7 +570,7 @@ document.addEventListener('visibilitychange', () => {
 
 /* ========== 介面 ========== */
 const $ = (id) => document.getElementById(id);
-const sheetSel = $('sheetSel'), shiftVal = $('shiftVal'), patternSel = $('patternSel');
+const sheetSel = $('sheetSel'), shiftVal = $('shiftVal');
 const bpmVal = $('bpmVal'), bpmUnit = $('bpmUnit');
 const pad = $('pad'), beatsEl = $('beats'), stepsEl = $('steps');
 const chordNameEl = $('chordName'), chordSubEl = $('chordSub'), playBtn = $('playBtn');
@@ -673,9 +673,10 @@ function render() {
   // 模式
   document.querySelectorAll('#meterSeg button').forEach((b) => b.classList.toggle('on', b.dataset.meter === state.meter));
   sheetSel.value = state.scale + ':' + state.sheet;
-  patternSel.value = state.pattern;
-  $('orderSel').value = state.padOrder;
-  $('sizeSel').value = state.padSize;
+  const segOn = (id, v) => document.querySelectorAll('#' + id + ' button').forEach((b) => b.classList.toggle('on', b.dataset.v === v));
+  segOn('patternSeg', state.pattern);
+  segOn('orderSeg', state.padOrder);
+  segOn('sizeSeg', state.padSize);
   document.body.classList.toggle('size-large', state.padSize === 'large');
   document.body.classList.toggle('size-xl', state.padSize === 'xl');
   document.body.classList.toggle('pitch-open', !!state.pitchOpen);
@@ -760,11 +761,14 @@ function setShift(v) {
 $('keyDown').addEventListener('click', () => setShift(state.shift - 1));
 $('keyUp').addEventListener('click', () => setShift(state.shift + 1));
 shiftVal.addEventListener('click', () => setShift(0));
-patternSel.addEventListener('change', () => { state.pattern = patternSel.value; save(); buildSteps(); });
-$('sizeSel').addEventListener('change', () => { state.padSize = $('sizeSel').value; save(); render(); });
+// 分段按鈕：點了回傳 data-v
+const onSeg = (id, fn) => $(id).addEventListener('click', (e) => { const b = e.target.closest('button'); if (b) fn(b.dataset.v); });
+onSeg('patternSeg', (v) => { state.pattern = v; save(); buildSteps(); render(); });
+onSeg('sizeSeg', (v) => { state.padSize = v; save(); render(); });
 $('pitchToggle').addEventListener('click', () => { state.pitchOpen = !state.pitchOpen; save(); render(); });
-$('orderSel').addEventListener('change', () => {
-  state.padOrder = $('orderSel').value;
+onSeg('orderSeg', (v) => {
+  if (v === state.padOrder) return;
+  state.padOrder = v;
   if (playing) stop();
   current = null; pending = null;
   CHORDS = chordSet();

@@ -38,60 +38,54 @@
   </section>
 
   <section class="controls">
-    <div class="row">
-      <label class="field">
-        <span>譜上的調</span>
+    <div class="card">
+      <div class="card-title">這首歌</div>
+      <div class="set-row">
+        <span class="set-label">譜上的調</span>
         <select id="sheetSel"></select>
-      </label>
-      <label class="field">
-        <span>刷法</span>
-        <select id="patternSel">
-          <option value="strum">節奏刷</option>
-          <option value="beat">每拍一下</option>
-          <option value="arp">分解和弦</option>
-        </select>
-      </label>
-      <label class="field">
-        <span>按鍵排法</span>
-        <select id="orderSel">
-          <option value="basic">基礎 6 個</option>
-          <option value="common">常用</option>
-          <option value="seq">順序</option>
-        </select>
-      </label>
-    </div>
-    <div class="row">
-      <label class="field">
-        <span>按鍵大小</span>
-        <select id="sizeSel">
-          <option value="large">大</option>
-          <option value="normal">標準</option>
-          <option value="xl">特大</option>
-        </select>
-      </label>
-    </div>
-
-    <div class="field">
-      <span>升降 Key（點中間回原調）</span>
-      <div class="tempo keyshift">
-        <button id="keyDown">降 Key</button>
-        <button id="shiftVal" class="shift-val">原調</button>
-        <button id="keyUp">升 Key</button>
       </div>
+      <div class="set-row">
+        <span class="set-label">升降 Key<small>點中間回原調</small></span>
+        <div class="stepper">
+          <button id="keyDown" aria-label="降 Key">−</button>
+          <button id="shiftVal" class="shift-val">原調</button>
+          <button id="keyUp" aria-label="升 Key">＋</button>
+        </div>
+      </div>
+      <div class="set-col">
+        <span class="set-label">拍號</span>
+        <div class="seg wrap" id="meterSeg"></div>
+      </div>
+      <div class="set-row">
+        <span class="set-label">速度<small>一拍 = <b id="bpmUnit">四分音符</b></small></span>
+        <div class="stepper">
+          <button id="bpmDown" aria-label="減速">−</button>
+          <div class="bpm-num" id="bpmVal">80</div>
+          <button id="bpmUp" aria-label="加速">＋</button>
+        </div>
+      </div>
+      <button id="tap" class="tap">點拍速（跟著拍子連點幾下）</button>
     </div>
 
-    <div class="field">
-      <span>拍號</span>
-      <div class="seg wrap" id="meterSeg"></div>
-    </div>
-
-    <div class="field">
-      <span>速度（每分鐘幾拍，一拍 = <b id="bpmUnit">四分音符</b>）</span>
-      <div class="tempo">
-        <button id="bpmDown" aria-label="減速">−</button>
-        <div class="bpm-num" id="bpmVal">80</div>
-        <button id="bpmUp" aria-label="加速">＋</button>
-        <button id="tap" class="tap">點拍速</button>
+    <div class="card">
+      <div class="card-title">彈法與按鍵</div>
+      <div class="set-col">
+        <span class="set-label">刷法</span>
+        <div class="seg three" id="patternSeg">
+          <button data-v="strum">節奏刷</button><button data-v="beat">每拍一下</button><button data-v="arp">分解和弦</button>
+        </div>
+      </div>
+      <div class="set-col">
+        <span class="set-label">和弦鍵</span>
+        <div class="seg three" id="orderSeg">
+          <button data-v="basic">基礎 6 個</button><button data-v="common">常用</button><button data-v="seq">順序</button>
+        </div>
+      </div>
+      <div class="set-col">
+        <span class="set-label">按鍵大小</span>
+        <div class="seg three" id="sizeSeg">
+          <button data-v="normal">標準</button><button data-v="large">大</button><button data-v="xl">特大</button>
+        </div>
       </div>
     </div>
   </section>

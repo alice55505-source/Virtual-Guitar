@@ -46,7 +46,7 @@ select {
 }
 .bpm-num { text-align: center; font-size: 30px; font-weight: 800; font-variant-numeric: tabular-nums; }
 .tempo .tap { font-size: 16px; font-weight: 700; background: var(--panel); border: 1px solid var(--panel2); }
-.tempo .tap.hit { background: var(--accent); color: #1b1408; }
+.tap.hit { background: var(--accent) !important; color: #1b1408; }
 input[type=range] { width: 100%; accent-color: var(--accent); }
 
 .display {
@@ -230,3 +230,24 @@ body.score-mode.size-large .pad button .n { font-size: 24px; }
 body.score-mode.size-xl .pad { grid-template-columns: repeat(3, 1fr) !important; }
 body.score-mode.size-xl .pad button { min-height: 72px; }
 body.score-mode.size-xl .pad button .n { font-size: 30px; }
+
+/* ===== 設定面板 ===== */
+.card { background: var(--panel); border-radius: 14px; padding: 2px 14px 12px; }
+.card-title { font-size: 12px; color: var(--muted); letter-spacing: .12em; padding: 10px 0 2px; }
+.set-row, .set-col { padding: 10px 0; border-top: 1px solid var(--panel2); }
+.card-title + .set-row, .card-title + .set-col { border-top: 0; }
+.set-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.set-col { display: grid; gap: 8px; }
+.set-label { font-size: 15px; display: grid; gap: 2px; }
+.set-label small { font-size: 11px; color: var(--muted); }
+.set-label small b { color: var(--text); font-weight: 600; }
+.set-row select { width: auto; min-width: 140px; background: var(--panel2); border: 0; padding: 9px 10px; }
+.stepper { display: grid; grid-template-columns: 42px minmax(92px, auto) 42px; align-items: center; gap: 6px; }
+.stepper button { height: 38px; border-radius: 10px; border: 0; background: var(--panel2); font-size: 20px; }
+.stepper .shift-val { background: transparent; font-size: 17px; font-weight: 800; }
+.stepper .shift-val small { font-size: 12px; color: var(--muted); font-weight: 400; margin-left: 3px; }
+.stepper .bpm-num { font-size: 26px; }
+.card .seg { background: var(--bg); width: 100%; }
+.seg.three { display: grid; grid-template-columns: repeat(3, 1fr); }
+.seg.three button { min-width: 0; padding: 9px 0; }
+.card .tap { width: 100%; height: 42px; border-radius: 10px; border: 1px dashed var(--panel2); background: transparent; font-weight: 700; margin-top: 2px; }
