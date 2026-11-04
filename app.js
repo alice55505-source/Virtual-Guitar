@@ -617,8 +617,9 @@ function buildPad() {
   padFor = CHORDS;
 }
 
-function pressChord(i) {
-  const ch = { i, mod: state.mod };
+function pressChord(i) { pressChordObj({ i, mod: state.mod }); }
+// ch：按鍵的 {i, mod}，或歌詞上的和弦 {off, q}
+function pressChordObj(ch) {
   if (!playing) {
     current = ch;
     start();

@@ -151,7 +151,8 @@ body.score-mode .score-pane {
   background: #fff; border-radius: 12px; overflow: hidden; margin: 6px 0;
 }
 .score-head { display: flex; align-items: center; gap: 6px; padding: 6px 8px; background: var(--panel); flex-wrap: wrap; }
-#prevHymn, #nextHymn { flex: 1 1 0; font-weight: 700; }
+#prevHymn, #nextHymn { flex: 0 0 44px; font-weight: 700; }
+#lyrBtn, #lyrEditBtn { flex: 1 1 0; white-space: nowrap; }
 .score-info { flex: 1 1 100%; min-width: 0; }
 .hymn-title { font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .hymn-meta { font-size: 12px; color: var(--accent2); }
@@ -258,3 +259,25 @@ body.score-mode.size-xl .pad button .n { font-size: 30px; }
 .card .tap:active { transform: translateY(2px); box-shadow: 0 1px 0 #1c5bb3; }
 .card .tap.hit { background: #ffd08a !important; color: #1b1408; }
 .card .tap small { font-size: 12px; font-weight: 400; opacity: .85; }
+
+/* ===== 歌詞和弦 ===== */
+.lyrics-box { display: none; }
+body.lyr-view .score-scroll { display: none; }
+body.lyr-view .lyrics-box { display: block; flex: 1; overflow: auto; background: #fbf8f2; color: #222; padding: 10px 12px 24px; }
+.score-head .lyr-btn { background: #2f80ed; color: #fff; font-weight: 800; }
+#lyrEditBtn.on { background: var(--on); color: #08130d; font-weight: 800; }
+.lyr-tip { font-size: 12px; color: #776; margin-bottom: 8px; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.lyr-tip button { border: 1px solid #cbb; background: #fff; border-radius: 8px; padding: 3px 8px; color: #533; }
+.lyr-block { margin-bottom: 14px; }
+.lyr-block.chorus { background: #f3ecdf; border-radius: 10px; padding: 4px 6px; }
+.lyr-label { font-size: 12px; color: #a07a4a; font-weight: 700; margin-bottom: 2px; }
+.lyr-line { display: flex; flex-wrap: wrap; margin-bottom: 4px; }
+.lc { display: inline-flex; flex-direction: column; align-items: center; min-width: 1.15em; }
+.lc .t { font-size: 21px; line-height: 1.3; }
+.lc .t.p { color: #998; }
+.chip { min-height: 22px; font-size: 15px; font-weight: 800; color: #fff; background: #e0913c; border-radius: 6px; padding: 0 4px; line-height: 22px; white-space: nowrap; }
+.chip.empty { background: transparent; padding: 0; min-width: 0; }
+body.lyr-edit-on .lc[data-k] .t { text-decoration: underline dotted #c9a; }
+.chord-pop-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+.chord-pop-grid button { border: 0; border-radius: 10px; background: var(--panel2); padding: 12px 0; font-size: 20px; font-weight: 800; }
+.chord-pop-del { border: 0; border-radius: 10px; background: #3a2526; color: #ffb3b0; padding: 10px; }

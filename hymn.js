@@ -65,8 +65,8 @@ async function openHymn(cat, num) {
   closePicker();
   recent = [{ cat, num }].concat(recent.filter((r) => !(r.cat === cat && r.num === num))).slice(0, 8);
   saveSongs();
-  if (cat === 'my') { openMySong(num); return; }
-  loadScore(cat, num);
+  if (cat === 'my') { openMySong(num); updateLyrButtons(); renderLyrics(); return; }
+  const scoreP = loadScore(cat, num);
 
   let info = null;
   try {
@@ -76,6 +76,7 @@ async function openHymn(cat, num) {
       const lines = text.split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
       hymn.title = s2t(lines[1] || '');
       info = parseKey(text);
+      hymn.text = text;
     }
   } catch (_) {}
   if (!hymn || hymn.cat !== cat || hymn.num !== num) return;
@@ -88,6 +89,9 @@ async function openHymn(cat, num) {
     if (!hymn || hymn.cat !== cat || hymn.num !== num) return;
   }
   applySong(info, chordKey);
+  await scoreP;
+  if (!hymn || hymn.cat !== cat || hymn.num !== num) return;
+  prepareLyrics(hymn.text, hymn.pages);
 }
 
 // 依譜設定調、大小調、拍號；再套用這首歌上次的升降 Key／速度／刷法
@@ -145,6 +149,7 @@ async function loadScore(cat, num) {
 }
 
 function showPages(pages) {
+  if (hymn) hymn.pages = pages;
   const box = $('scoreScroll');
   box.innerHTML = '';
   pages.forEach((src, k) => {
@@ -223,6 +228,8 @@ async function stepHymn(dir) {
 function closeHymn() {
   if (playing) stop();
   hymn = null;
+  lyrEdit = false;
+  updateLyrButtons();
   document.body.classList.remove('score-mode', 'show-settings');
   $('settingsBtn').classList.remove('on');
   $('scoreScroll').innerHTML = '';

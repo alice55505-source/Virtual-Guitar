@@ -29,12 +29,15 @@
         <div id="hymnTitle" class="hymn-title"></div>
         <div id="hymnMeta" class="hymn-meta"></div>
       </div>
-      <button id="prevHymn" aria-label="上一首">◀ 上一首</button>
-      <button id="nextHymn" aria-label="下一首">下一首 ▶</button>
+      <button id="prevHymn" aria-label="上一首">◀</button>
+      <button id="nextHymn" aria-label="下一首">▶</button>
+      <button id="lyrBtn" class="lyr-btn" style="display:none">📝 歌詞</button>
+      <button id="lyrEditBtn" style="display:none">✎ 改和弦</button>
       <button id="hymnSwitch">換歌</button>
       <button id="hymnClose" aria-label="關閉樂譜">✕</button>
     </div>
     <div id="scoreScroll" class="score-scroll"></div>
+    <div id="lyricsBox" class="lyrics-box"></div>
   </section>
 
   <section class="controls">
@@ -140,11 +143,21 @@
     </div>
   </div>
 
+  <div id="chordPop" class="picker hidden">
+    <div class="picker-box">
+      <div class="picker-head"><b>選和弦</b><button id="chordPopCancel" aria-label="取消">✕</button></div>
+      <div id="chordPopGrid" class="chord-pop-grid"></div>
+      <button id="chordPopDel" class="chord-pop-del">移除這個和弦</button>
+    </div>
+  </div>
+
   <script src="app.js"></script>
   <script src="hymn-s2t.js"></script>
   <script src="chord-templates.js"></script>
   <script src="chord-ocr.js"></script>
   <script src="my-songs.js"></script>
+  <script src="chord-lyrics.js"></script>
+  <script src="lyrics-view.js"></script>
   <script src="hymn.js"></script>
 </body>
 </html>

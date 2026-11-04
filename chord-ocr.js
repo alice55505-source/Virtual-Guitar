@@ -150,7 +150,7 @@ function readChords(data) {
       if (c.y0 <= f.y0 + h * 0.2 && c.y1 <= f.y0 + h * 0.75) flat = true; // 右上小 b
       else if (c.y1 >= f.y1 - 3 && c.y0 >= f.y0 + h * 0.35) { if (bottomRuns(mask, w, c) >= 2) minor = true; else seven = true; } // 右下小 m（底部有 2~3 隻腳）／7
     }
-    return { x: f.x0, y: f.y0, y1: f.y1, r: (OCR_PC[f.l[0]] - (flat ? 1 : 0) + 12) % 12, m: minor, seven };
+    return { x: f.x0, x1: f.x1, y: f.y0, y1: f.y1, r: (OCR_PC[f.l[0]] - (flat ? 1 : 0) + 12) % 12, m: minor, seven };
   });
   res.sort((a, b) => a.y - b.y || a.x - b.x);
   const rows = [];
