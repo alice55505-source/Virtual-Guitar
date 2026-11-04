@@ -132,15 +132,27 @@ function applySong(info, chordKey) {
   render();
 }
 
+// 用本 App 自己的圖取代詩歌本的樂譜（scores/ 資料夾）
+const SCORE_OVERRIDES = {
+  tw6: ['scores/tw6.jpg'], // 甲主作伙行（含和弦的版本）
+};
+
 async function loadScore(cat, num) {
   const base = HYMN_CATS[cat].score + num;
   const box = $('scoreScroll');
   box.innerHTML = '<div class="score-msg">樂譜載入中…</div>';
+  const ov = SCORE_OVERRIDES[cat + num];
+  if (ov) { showPages(ov); return; }
   // 主頁 + 可能的續頁 a~e
   const extra = await Promise.all(['a', 'b', 'c', 'd', 'e'].map((s) =>
     fetch(base + s + '.png', { method: 'HEAD' }).then((r) => (r.ok ? base + s + '.png' : null)).catch(() => null)));
   if (!hymn || hymn.cat !== cat || hymn.num !== num) return;
   const pages = [base + '.png'].concat(extra.filter(Boolean));
+  showPages(pages);
+}
+
+function showPages(pages) {
+  const box = $('scoreScroll');
   box.innerHTML = '';
   pages.forEach((src, k) => {
     const wrap = document.createElement('div');
