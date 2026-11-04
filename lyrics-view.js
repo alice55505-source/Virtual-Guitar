@@ -175,6 +175,7 @@ function updateLyrButtons() {
   $('lyrEditBtn').textContent = lyrEdit ? '✓ 完成' : '✎ 改和弦';
   $('lyrEditBtn').classList.toggle('on', lyrEdit);
   document.body.classList.toggle('lyr-view', has && lyrView);
+  document.body.classList.toggle('lyr-editing', has && lyrView && lyrEdit);
 }
 
 function renderLyrics() {
@@ -252,13 +253,39 @@ function renderLyrics() {
 }
 
 // 點和弦 → 彈；編輯模式點字 → 選和弦
+// 一般模式：按下和弦就彈（pointerdown 反應快）
 function onLyricsTap(e) {
+  if (lyrEdit) return;
   const cell = e.target.closest('.lc');
   if (!cell || cell.dataset.k === undefined || !hymn || !hymn.lyr) return;
-  const part = cell.dataset.part, k = +cell.dataset.k;
-  const c = hymn.lyr.map[part][k];
-  if (lyrEdit) { openChordEditor(part, k); return; }
+  const c = hymn.lyr.map[cell.dataset.part][+cell.dataset.k];
   if (c && e.target.closest('.chip')) { e.preventDefault(); goSeq(+cell.dataset.seq); }
+}
+
+// 編輯模式：用 click（捲動時不會誤觸）；點在字與字的空隙、標點上，就找最近的字
+function onLyricsEditTap(e) {
+  if (!lyrEdit || !hymn || !hymn.lyr) return;
+  let cell = e.target.closest('.lc[data-k]');
+  if (!cell) {
+    const line = e.target.closest('.lyr-line') || nearestLine(e.clientY);
+    if (!line) return;
+    let bd = 1e9;
+    line.querySelectorAll('.lc[data-k]').forEach((c) => {
+      const r = c.getBoundingClientRect();
+      const d = Math.abs((r.left + r.right) / 2 - e.clientX);
+      if (d < bd) { bd = d; cell = c; }
+    });
+  }
+  if (cell) openChordEditor(cell.dataset.part, +cell.dataset.k);
+}
+function nearestLine(y) {
+  let best = null, bd = 60;
+  document.querySelectorAll('#lyricsBox .lyr-line').forEach((l) => {
+    const r = l.getBoundingClientRect();
+    const d = y < r.top ? r.top - y : y > r.bottom ? y - r.bottom : 0;
+    if (d < bd) { bd = d; best = l; }
+  });
+  return best;
 }
 
 /* ---------- 點一下換下一個和弦 ---------- */
@@ -312,6 +339,7 @@ function setLyrChord(part, k, c) {
 }
 
 $('lyricsBox').addEventListener('pointerdown', onLyricsTap);
+$('lyricsBox').addEventListener('click', onLyricsEditTap);
 setLyrFont(lyrFont);
 $('lyrBtn').addEventListener('click', () => {
   lyrView = !lyrView; lyrEdit = false;

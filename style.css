@@ -305,3 +305,8 @@ body.lyr-view.pad-hidden #pad, body.lyr-view.pad-hidden .pitch { display: none !
 .edit-choice.cloud { background: #2f80ed; color: #fff; }
 .edit-choice.cloud small { color: #dbe8ff; }
 .edit-cancel { border: 0; background: transparent; color: var(--muted); padding: 8px; }
+/* 編輯和弦時：每個字變成明顯的格子，空的和弦位置顯示「＋」 */
+body.lyr-editing .lc[data-k] { min-width: 1.45em; padding: 2px 1px; margin: 1px; border-radius: 6px; background: #f1e9db; cursor: pointer; }
+body.lyr-editing .lc[data-k]:active { background: #ffd08a; }
+body.lyr-editing .lc[data-k] .chip.empty::before { content: '＋'; color: #c9b089; font-weight: 400; }
+body.lyr-editing .lc[data-k] .chip.empty { min-width: 1em; }
