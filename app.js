@@ -86,6 +86,15 @@ const CHORD_SETS = {
   ],
 };
 let CHORDS = CHORD_SETS.major;
+// 按鍵排法：'common' 照常用度（上面的排法）；'seq' 照順序（根音由低到高，同根音：調內和弦在前，再大、小、sus4、7）
+const Q_ORDER = { '': 1, m: 2, sus4: 3, '7': 4 };
+function chordSet() {
+  const base = CHORD_SETS[state.scale];
+  if (state.padOrder !== 'seq') return base;
+  const dia = state.scale === 'minor' ? { 0: 'm', 3: '', 5: 'm', 7: 'm', 8: '', 10: '' } : { 0: '', 2: 'm', 4: 'm', 5: '', 7: '', 9: 'm' };
+  const rank = (c) => (dia[c.off] === c.q ? 0 : Q_ORDER[c.q] || 9);
+  return [...base].sort((a, b) => a.off - b.off || rank(a) - rank(b));
+}
 const keyTable = () => (state.scale === 'minor' ? MINOR_KEYS : MAJOR_KEYS);
 
 // 拍號：每拍幾個步（八分音符）、幾拍、刷法（B 根：刷低音 3 條弦 / D 下刷 / U 上刷 / - 空）、
@@ -112,12 +121,13 @@ const state = {
   meter: '4/4',
   bpm: 80,
   pattern: 'strum',
+  padOrder: 'common',
 };
 try { Object.assign(state, JSON.parse(localStorage.getItem('vg-settings') || '{}')); } catch (_) {}
 if (!METERS[state.meter]) state.meter = '4/4';
 if (!CHORD_SETS[state.scale]) state.scale = 'major';
 delete state.change; delete state.v2;
-CHORDS = CHORD_SETS[state.scale];
+CHORDS = chordSet();
 state.mod = ''; // 和弦變化列已移除，一律用原和弦
 if (state.sheet === null || state.sheet === undefined) state.sheet = state.key;
 // 升降 Key：shift = 要彈的調 − 譜上的調（−6 ~ +6 半音）
@@ -655,6 +665,7 @@ function render() {
   document.querySelectorAll('#meterSeg button').forEach((b) => b.classList.toggle('on', b.dataset.meter === state.meter));
   sheetSel.value = state.scale + ':' + state.sheet;
   patternSel.value = state.pattern;
+  $('orderSel').value = state.padOrder;
   bpmVal.textContent = state.bpm;
   bpmUnit.textContent = METERS[state.meter].unit;
 
@@ -725,7 +736,7 @@ sheetSel.addEventListener('change', () => {
   if (sc !== state.scale) { if (playing) stop(); current = null; pending = null; }
   state.scale = sc;
   state.sheet = +i;
-  CHORDS = CHORD_SETS[state.scale];
+  CHORDS = chordSet();
   syncKey(); save(); lastChord = null; render();
 });
 function setShift(v) {
@@ -736,6 +747,13 @@ $('keyDown').addEventListener('click', () => setShift(state.shift - 1));
 $('keyUp').addEventListener('click', () => setShift(state.shift + 1));
 shiftVal.addEventListener('click', () => setShift(0));
 patternSel.addEventListener('change', () => { state.pattern = patternSel.value; save(); buildSteps(); });
+$('orderSel').addEventListener('change', () => {
+  state.padOrder = $('orderSel').value;
+  if (playing) stop();
+  current = null; pending = null;
+  CHORDS = chordSet();
+  save(); render();
+});
 
 function setBpm(v) {
   state.bpm = Math.max(30, Math.min(240, Math.round(v)));

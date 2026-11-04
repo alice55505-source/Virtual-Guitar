@@ -96,7 +96,7 @@ function applySong(info, chordKey) {
   let meta = '';
   if (info) {
     state.scale = info.scale;
-    CHORDS = CHORD_SETS[state.scale];
+    CHORDS = chordSet();
     state.sheet = chordKey ? chordKey.key : info.pc;
     if (info.meter && METERS[info.meter]) state.meter = info.meter;
     const kt = keyTable();
@@ -106,7 +106,7 @@ function applySong(info, chordKey) {
     if (info.meter) meta += ' ' + info.meter + (METERS[info.meter] ? '' : '（拍號請手動選）');
   } else if (chordKey) {
     state.scale = chordKey.scale;
-    CHORDS = CHORD_SETS[state.scale];
+    CHORDS = chordSet();
     state.sheet = chordKey.key;
     meta = '和弦 ' + keyTable()[chordKey.key][0] + ' 調';
   } else {
@@ -114,7 +114,7 @@ function applySong(info, chordKey) {
   }
   if (hymn.cat === 'my') {
     if (pref.sheet !== undefined) {
-      state.scale = pref.scale; CHORDS = CHORD_SETS[state.scale]; state.sheet = pref.sheet;
+      state.scale = pref.scale; CHORDS = chordSet(); state.sheet = pref.sheet;
       if (pref.meter && METERS[pref.meter]) state.meter = pref.meter;
       meta = keyTable()[state.sheet][0] + ' 調 ' + state.meter;
     } else if (!chordKey) meta = '請按 ⚙ 設定選調和拍號（會記住）';
