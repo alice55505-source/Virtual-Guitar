@@ -169,7 +169,11 @@ body.score-mode .chord-name { font-size: 34px; }
 body.score-mode .chord-sub, body.score-mode .steps { display: none; }
 body.score-mode .beats i { width: 12px; height: 12px; }
 body.score-mode .pitch { flex: none; margin-bottom: 6px; gap: 4px; }
-body.score-mode .pitch-head { display: none; }
+/* 看譜時起音鍵預設收起，只留一行「起音 1=G  起音鍵 ▾」 */
+body.score-mode .pitch-head { font-size: 12px; }
+body.score-mode:not(.pitch-open) .solfege { display: none; }
+.pitch-toggle { display: none; border: 0; border-radius: 8px; background: var(--panel2); padding: 4px 10px; font-size: 13px; }
+body.score-mode .pitch-toggle { display: inline-block; }
 body.score-mode .solfege button { padding: 7px 0 2px; }
 body.score-mode .solfege button .n { font-size: 16px; }
 body.score-mode .pad { flex: none; gap: 5px; grid-template-columns: repeat(6, 1fr); }
@@ -210,3 +214,16 @@ body.score-mode .play { height: 46px; font-size: 18px; }
 .hit-head { font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .hit-snip { font-size: 13px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .hit-snip mark { background: var(--accent2); color: #1b1408; border-radius: 3px; }
+
+/* 按鍵大小 */
+body.size-large .pad button { min-height: 96px; }
+body.size-large .pad button .n { font-size: 34px; }
+body.size-xl .pad { grid-template-columns: repeat(2, 1fr) !important; }
+body.size-xl .pad button { min-height: 120px; }
+body.size-xl .pad button .n { font-size: 44px; }
+body.score-mode.size-large .pad { grid-template-columns: repeat(4, 1fr) !important; }
+body.score-mode.size-large .pad button { min-height: 60px; }
+body.score-mode.size-large .pad button .n { font-size: 24px; }
+body.score-mode.size-xl .pad { grid-template-columns: repeat(3, 1fr) !important; }
+body.score-mode.size-xl .pad button { min-height: 72px; }
+body.score-mode.size-xl .pad button .n { font-size: 30px; }

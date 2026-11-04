@@ -54,9 +54,19 @@
       <label class="field">
         <span>按鍵排法</span>
         <select id="orderSel">
+          <option value="basic">基礎 6 個</option>
           <option value="common">常用</option>
           <option value="seq">順序</option>
-          <option value="basic">基礎 6 個</option>
+        </select>
+      </label>
+    </div>
+    <div class="row">
+      <label class="field">
+        <span>按鍵大小</span>
+        <select id="sizeSel">
+          <option value="normal">標準</option>
+          <option value="large">大</option>
+          <option value="xl">特大</option>
         </select>
       </label>
     </div>
@@ -98,6 +108,7 @@
   <section class="pitch">
     <div class="pitch-head">
       <span>起音 <b id="doLabel"></b></span>
+      <button id="pitchToggle" class="pitch-toggle">起音鍵 ▾</button>
     </div>
     <div id="solfege" class="solfege"></div>
   </section>

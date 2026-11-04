@@ -122,12 +122,17 @@ const state = {
   meter: '4/4',
   bpm: 80,
   pattern: 'strum',
-  padOrder: 'common',
+  padOrder: 'basic',
+  padSize: 'normal',
+  pitchOpen: false,
 };
 try { Object.assign(state, JSON.parse(localStorage.getItem('vg-settings') || '{}')); } catch (_) {}
 if (!METERS[state.meter]) state.meter = '4/4';
 if (!CHORD_SETS[state.scale]) state.scale = 'major';
 delete state.out;
+// 預設改成「基礎 6 個」：舊的設定也套用一次
+if (!state.v3) { state.padOrder = 'basic'; state.v3 = 1; }
+if (!['normal', 'large', 'xl'].includes(state.padSize)) state.padSize = 'normal';
 delete state.change; delete state.v2;
 CHORDS = chordSet();
 state.mod = ''; // 和弦變化列已移除，一律用原和弦
@@ -668,6 +673,11 @@ function render() {
   sheetSel.value = state.scale + ':' + state.sheet;
   patternSel.value = state.pattern;
   $('orderSel').value = state.padOrder;
+  $('sizeSel').value = state.padSize;
+  document.body.classList.toggle('size-large', state.padSize === 'large');
+  document.body.classList.toggle('size-xl', state.padSize === 'xl');
+  document.body.classList.toggle('pitch-open', !!state.pitchOpen);
+  $('pitchToggle').textContent = state.pitchOpen ? '收起 ▴' : '起音鍵 ▾';
   bpmVal.textContent = state.bpm;
   bpmUnit.textContent = METERS[state.meter].unit;
 
@@ -749,6 +759,8 @@ $('keyDown').addEventListener('click', () => setShift(state.shift - 1));
 $('keyUp').addEventListener('click', () => setShift(state.shift + 1));
 shiftVal.addEventListener('click', () => setShift(0));
 patternSel.addEventListener('change', () => { state.pattern = patternSel.value; save(); buildSteps(); });
+$('sizeSel').addEventListener('change', () => { state.padSize = $('sizeSel').value; save(); render(); });
+$('pitchToggle').addEventListener('click', () => { state.pitchOpen = !state.pitchOpen; save(); render(); });
 $('orderSel').addEventListener('change', () => {
   state.padOrder = $('orderSel').value;
   if (playing) stop();
