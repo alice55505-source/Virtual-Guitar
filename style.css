@@ -283,5 +283,17 @@ body.lyr-edit-on .lc[data-k] .t { text-decoration: underline dotted #c9a; }
 .chord-pop-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
 .chord-pop-grid button { border: 0; border-radius: 10px; background: var(--panel2); padding: 12px 0; font-size: 20px; font-weight: 800; }
 .chord-pop-del { border: 0; border-radius: 10px; background: #3a2526; color: #ffb3b0; padding: 10px; }
-.lyr-zoom { position: sticky; top: 0; float: right; display: flex; gap: 4px; z-index: 2; }
+.lyr-zoom { float: right; display: flex; gap: 4px; z-index: 2; }
 .lyr-zoom button { border: 0; border-radius: 8px; background: #2a2e38; color: #fff; font-weight: 800; padding: 6px 10px; font-size: 15px; opacity: .85; }
+
+/* 點一下換下一個和弦 */
+.step-bar { display: grid; grid-template-columns: 56px 1fr; gap: 6px; margin-bottom: 6px; flex: none; }
+.step-bar button { border: 0; border-radius: 14px; font-weight: 800; }
+#stepPrev { background: var(--panel2); font-size: 20px; }
+#stepPrev:disabled { opacity: .35; }
+#stepNext { background: #2f80ed; color: #fff; min-height: 64px; font-size: 20px; box-shadow: 0 3px 0 #1c5bb3; }
+#stepNext b { font-size: 26px; margin: 0 4px; }
+#stepNext:active { transform: translateY(2px); box-shadow: 0 1px 0 #1c5bb3; }
+.lc.cur .chip { background: #2f80ed; outline: 3px solid #ffd08a; }
+.lc.cur .t { background: #ffe8a8; border-radius: 4px; }
+.lc.nxt .chip { outline: 2px dashed #2f80ed; }

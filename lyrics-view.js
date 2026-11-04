@@ -73,7 +73,8 @@ function saveMap() { try { localStorage.setItem(lyrStoreKey(), JSON.stringify({ 
 async function prepareLyrics(text, pages) {
   const h = hymn;
   const blocks = text ? parseLyricBlocks(text) : [];
-  h.lyr = { blocks, map: { verse: {}, chorus: {} }, sheet: state.sheet, auto: false };
+  h.lyr = { blocks, map: { verse: {}, chorus: {} }, sheet: state.sheet, auto: false, seq: [] };
+  lyrPos = -1;
   updateLyrButtons();
   if (!blocks.length) return;
   const saved = loadSavedMap();
@@ -93,6 +94,7 @@ async function prepareLyrics(text, pages) {
 
 function updateLyrButtons() {
   const has = !!(hymn && hymn.lyr && hymn.lyr.blocks.length);
+  $('stepBar').style.display = has && lyrView && !lyrEdit ? '' : 'none';
   $('lyrBtn').style.display = has ? '' : 'none';
   $('lyrBtn').textContent = lyrView ? '🎼 樂譜' : '📝 歌詞';
   $('lyrEditBtn').style.display = has && lyrView ? '' : 'none';
@@ -107,6 +109,7 @@ function renderLyrics() {
   if (!hymn || !hymn.lyr || !lyrView) { box.innerHTML = ''; return; }
   const { blocks, map } = hymn.lyr;
   box.innerHTML = '';
+  hymn.lyr.seq = []; // 照歌詞順序的所有和弦（點一下換下一個用）
   box.insertAdjacentHTML('beforeend', '<div class="lyr-zoom"><button data-z="-3">A−</button><button data-z="3">A＋</button></div>');
   box.querySelectorAll('.lyr-zoom button').forEach((b) => { b.onclick = () => setLyrFont(lyrFont + +b.dataset.z); });
   if (lyrEdit) box.insertAdjacentHTML('beforeend', '<div class="lyr-tip">點字加和弦、點和弦修改；每一節共用第一節的和弦位置。<button id="lyrReset">還原自動</button></div>');
@@ -127,6 +130,7 @@ function renderLyrics() {
         if (isHan(ch)) {
           const c = bm[k];
           cell.dataset.part = part; cell.dataset.k = k;
+          if (c) { cell.dataset.seq = hymn.lyr.seq.length; hymn.lyr.seq.push(c); }
           cell.innerHTML = '<span class="chip' + (c ? '' : ' empty') + '">' + (c ? chordName(c) : '') + '</span><span class="t"></span>';
           cell.querySelector('.t').textContent = ch;
           k++;
@@ -140,6 +144,8 @@ function renderLyrics() {
     });
     box.appendChild(el);
   });
+  if (lyrPos >= hymn.lyr.seq.length) lyrPos = -1;
+  markSeq(false);
   const rs = $('lyrReset');
   if (rs) rs.onclick = async () => {
     if (!confirm('清除自己改的和弦，回到自動對位？')) return;
@@ -159,7 +165,35 @@ function onLyricsTap(e) {
   const part = cell.dataset.part, k = +cell.dataset.k;
   const c = hymn.lyr.map[part][k];
   if (lyrEdit) { openChordEditor(part, k); return; }
-  if (c && e.target.closest('.chip')) { e.preventDefault(); pressChordObj({ off: c.off, q: c.q }); }
+  if (c && e.target.closest('.chip')) { e.preventDefault(); goSeq(+cell.dataset.seq); }
+}
+
+/* ---------- 點一下換下一個和弦 ---------- */
+let lyrPos = -1; // 目前彈到第幾個和弦（-1 = 還沒開始）
+function goSeq(i) {
+  const seq = hymn && hymn.lyr && hymn.lyr.seq;
+  if (!seq || !seq.length) return;
+  if (i >= seq.length) { lyrPos = -1; if (playing) stop(); markSeq(); return; } // 唱完了
+  lyrPos = Math.max(0, i);
+  const c = seq[lyrPos];
+  pressChordObj({ off: c.off, q: c.q });
+  markSeq(true);
+}
+// 框出目前的和弦、淡淡標出下一個，並捲到看得到
+function markSeq(scroll) {
+  const box = $('lyricsBox');
+  box.querySelectorAll('.lc.cur, .lc.nxt').forEach((e) => e.classList.remove('cur', 'nxt'));
+  const cur = box.querySelector('.lc[data-seq="' + lyrPos + '"]');
+  const nxt = box.querySelector('.lc[data-seq="' + (lyrPos + 1) + '"]');
+  if (cur) cur.classList.add('cur');
+  if (nxt) nxt.classList.add('nxt');
+  if (scroll && cur) cur.scrollIntoView({ block: 'center', behavior: 'smooth' });
+  const seq = (hymn && hymn.lyr && hymn.lyr.seq) || [];
+  const n = seq[lyrPos + 1];
+  $('stepNext').innerHTML = lyrPos < 0
+    ? (seq.length ? '▶ 從頭開始：<b>' + chordName(seq[0]) + '</b>' : '這首還沒有和弦')
+    : n ? '下一個 <b>' + chordName(n) + '</b> ▶' : '■ 結束';
+  $('stepPrev').disabled = lyrPos <= 0;
 }
 
 function openChordEditor(part, k) {
@@ -192,5 +226,7 @@ $('lyrBtn').addEventListener('click', () => {
   renderLyrics();
 });
 $('lyrEditBtn').addEventListener('click', () => { lyrEdit = !lyrEdit; renderLyrics(); });
+$('stepNext').addEventListener('pointerdown', (e) => { e.preventDefault(); goSeq(lyrPos + 1); });
+$('stepPrev').addEventListener('pointerdown', (e) => { e.preventDefault(); if (lyrPos > 0) goSeq(lyrPos - 1); });
 $('chordPopCancel').addEventListener('click', () => $('chordPop').classList.add('hidden'));
 $('chordPop').addEventListener('click', (e) => { if (e.target.id === 'chordPop') $('chordPop').classList.add('hidden'); });
