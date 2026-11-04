@@ -8,6 +8,13 @@ const isHan = (ch) => /[㐀-鿿豈-﫿]/.test(ch);
 const MARK = /^[（(]?(副歌?|[一二三四五六七八九十]+)[)）]?$/;
 let lyrView = (() => { try { return localStorage.getItem('vg-view') === 'lyrics'; } catch (_) { return false; } })();
 let lyrEdit = false;
+// 歌詞字體大小（px），記在手機
+let lyrFont = (() => { try { return +localStorage.getItem('vg-lyr-font') || 24; } catch (_) { return 24; } })();
+function setLyrFont(v) {
+  lyrFont = Math.max(16, Math.min(44, v));
+  try { localStorage.setItem('vg-lyr-font', lyrFont); } catch (_) {}
+  $('lyricsBox').style.setProperty('--lyr-font', lyrFont + 'px');
+}
 
 // 文字檔 → 段落 [{label, chorus, lines}]
 function parseLyricBlocks(text) {
@@ -100,6 +107,8 @@ function renderLyrics() {
   if (!hymn || !hymn.lyr || !lyrView) { box.innerHTML = ''; return; }
   const { blocks, map } = hymn.lyr;
   box.innerHTML = '';
+  box.insertAdjacentHTML('beforeend', '<div class="lyr-zoom"><button data-z="-3">A−</button><button data-z="3">A＋</button></div>');
+  box.querySelectorAll('.lyr-zoom button').forEach((b) => { b.onclick = () => setLyrFont(lyrFont + +b.dataset.z); });
   if (lyrEdit) box.insertAdjacentHTML('beforeend', '<div class="lyr-tip">點字加和弦、點和弦修改；每一節共用第一節的和弦位置。<button id="lyrReset">還原自動</button></div>');
   else if (hymn.lyr.auto) box.insertAdjacentHTML('beforeend', '<div class="lyr-tip">和弦位置是自動對的，有錯可按「✎ 改和弦」修正。點和弦就會彈。</div>');
   blocks.forEach((b) => {
@@ -176,6 +185,7 @@ function setLyrChord(part, k, c) {
 }
 
 $('lyricsBox').addEventListener('pointerdown', onLyricsTap);
+setLyrFont(lyrFont);
 $('lyrBtn').addEventListener('click', () => {
   lyrView = !lyrView; lyrEdit = false;
   try { localStorage.setItem('vg-view', lyrView ? 'lyrics' : 'score'); } catch (_) {}
