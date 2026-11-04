@@ -59,6 +59,7 @@ async function openHymn(cat, num) {
   hymn = { cat, num, title: '' };
   document.body.classList.add('score-mode');
   document.body.classList.remove('show-settings');
+  $('settingsBtn').classList.remove('on');
   $('hymnTitle').textContent = hymnLabel(cat, num);
   $('hymnMeta').textContent = '';
   closePicker();
@@ -218,6 +219,7 @@ function closeHymn() {
   if (playing) stop();
   hymn = null;
   document.body.classList.remove('score-mode', 'show-settings');
+  $('settingsBtn').classList.remove('on');
   $('scoreScroll').innerHTML = '';
 }
 
@@ -381,4 +383,7 @@ $('hymnClose').addEventListener('click', closeHymn);
 $('hymnSwitch').addEventListener('click', openPicker);
 $('prevHymn').addEventListener('click', () => stepHymn(-1));
 $('nextHymn').addEventListener('click', () => stepHymn(1));
-$('settingsBtn').addEventListener('click', () => document.body.classList.toggle('show-settings'));
+$('settingsBtn').addEventListener('click', () => {
+  const on = document.body.classList.toggle('show-settings');
+  $('settingsBtn').classList.toggle('on', on);
+});

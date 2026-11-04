@@ -161,8 +161,11 @@ body.score-mode .score-pane {
 .score-msg { color: #555; padding: 24px; text-align: center; }
 
 /* 看譜時：設定收起來、下方控制區變精簡 */
-body.score-mode .controls { display: none; }
-body.score-mode.show-settings .controls { display: grid; max-height: 42vh; overflow: auto; flex: none; }
+/* 設定預設收起，按右上角 ⚙ 設定 展開 */
+.controls { display: none !important; }
+body.show-settings .controls { display: grid !important; }
+body.score-mode.show-settings .controls { max-height: 42vh; overflow: auto; flex: none; }
+.top-btn.on { background: var(--accent2); color: #1b1408; }
 body.score-mode .display { flex: none; display: flex; align-items: center; justify-content: space-between; padding: 6px 12px; margin: 0 0 6px; gap: 8px; }
 body.score-mode .now { min-height: 0; flex-direction: row; gap: 8px; align-items: baseline; }
 body.score-mode .chord-name { font-size: 34px; }
