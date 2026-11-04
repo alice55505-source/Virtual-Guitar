@@ -287,7 +287,9 @@ body.lyr-edit-on .lc[data-k] .t { text-decoration: underline dotted #c9a; }
 .lyr-zoom button { border: 0; border-radius: 8px; background: #2a2e38; color: #fff; font-weight: 800; padding: 6px 10px; font-size: 15px; opacity: .85; }
 
 /* 點一下換下一個和弦 */
-.step-bar { display: grid; grid-template-columns: 56px 1fr; gap: 6px; margin-bottom: 6px; flex: none; }
+.step-bar { display: grid; grid-template-columns: 56px 1fr 56px; gap: 6px; margin-bottom: 6px; flex: none; }
+#padToggle { background: var(--panel2); font-size: 12px; line-height: 1.3; }
+body.lyr-view.pad-hidden #pad, body.lyr-view.pad-hidden .pitch { display: none !important; }
 .step-bar button { border: 0; border-radius: 14px; font-weight: 800; }
 #stepPrev { background: var(--panel2); font-size: 20px; }
 #stepPrev:disabled { opacity: .35; }

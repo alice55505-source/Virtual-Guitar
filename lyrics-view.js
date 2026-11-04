@@ -289,6 +289,18 @@ $('lyrEditBtn').addEventListener('click', async () => {
   if (lyrEdit && hymn && hymn.lyr && hymn.lyr.localOnly) await saveMap();
   renderLyrics();
 });
+// 歌詞版可以把和弦鍵、起音收起來，讓歌詞有更多空間（記在手機）
+let padHidden = (() => { try { return localStorage.getItem('vg-pad-hidden') === '1'; } catch (_) { return false; } })();
+function applyPadHidden() {
+  document.body.classList.toggle('pad-hidden', padHidden);
+  $('padToggle').innerHTML = padHidden ? '展開<br>按鍵' : '收起<br>按鍵';
+}
+$('padToggle').addEventListener('click', () => {
+  padHidden = !padHidden;
+  try { localStorage.setItem('vg-pad-hidden', padHidden ? '1' : '0'); } catch (_) {}
+  applyPadHidden();
+});
+applyPadHidden();
 $('stepNext').addEventListener('pointerdown', (e) => { e.preventDefault(); goSeq(lyrPos + 1); });
 $('stepPrev').addEventListener('pointerdown', (e) => { e.preventDefault(); if (lyrPos > 0) goSeq(lyrPos - 1); });
 $('chordPopCancel').addEventListener('click', () => $('chordPop').classList.add('hidden'));
