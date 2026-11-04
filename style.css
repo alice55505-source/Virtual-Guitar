@@ -172,11 +172,11 @@ body.score-mode .chord-name { font-size: 34px; }
 body.score-mode .chord-sub, body.score-mode .steps { display: none; }
 body.score-mode .beats i { width: 12px; height: 12px; }
 body.score-mode .pitch { flex: none; margin-bottom: 6px; gap: 4px; }
-/* 看譜時起音鍵預設收起，只留一行「起音 1=G  起音鍵 ▾」 */
+/* 起音鍵預設收起，只留一行「起音 1=G  起音鍵 ▾」 */
 body.score-mode .pitch-head { font-size: 12px; }
-body.score-mode:not(.pitch-open) .solfege { display: none; }
+body:not(.pitch-open) .solfege { display: none; }
 .pitch-toggle { display: none; border: 0; border-radius: 8px; background: var(--panel2); padding: 4px 10px; font-size: 13px; }
-body.score-mode .pitch-toggle { display: inline-block; }
+.pitch-toggle { display: inline-block !important; }
 body.score-mode .solfege button { padding: 7px 0 2px; }
 body.score-mode .solfege button .n { font-size: 16px; }
 body.score-mode .pad { flex: none; gap: 5px; grid-template-columns: repeat(6, 1fr); }

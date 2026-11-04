@@ -123,7 +123,7 @@ const state = {
   bpm: 80,
   pattern: 'strum',
   padOrder: 'basic',
-  padSize: 'normal',
+  padSize: 'large',
   pitchOpen: false,
 };
 try { Object.assign(state, JSON.parse(localStorage.getItem('vg-settings') || '{}')); } catch (_) {}
@@ -132,7 +132,9 @@ if (!CHORD_SETS[state.scale]) state.scale = 'major';
 delete state.out;
 // 預設改成「基礎 6 個」：舊的設定也套用一次
 if (!state.v3) { state.padOrder = 'basic'; state.v3 = 1; }
-if (!['normal', 'large', 'xl'].includes(state.padSize)) state.padSize = 'normal';
+// 預設按鍵「大」、起音鍵收起：舊的設定也套用一次
+if (!state.v4) { state.padSize = 'large'; state.pitchOpen = false; state.v4 = 1; }
+if (!['normal', 'large', 'xl'].includes(state.padSize)) state.padSize = 'large';
 delete state.change; delete state.v2;
 CHORDS = chordSet();
 state.mod = ''; // 和弦變化列已移除，一律用原和弦
