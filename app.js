@@ -123,11 +123,11 @@ const state = {
   bpm: 80,
   pattern: 'strum',
   padOrder: 'common',
-  out: 'normal',
 };
 try { Object.assign(state, JSON.parse(localStorage.getItem('vg-settings') || '{}')); } catch (_) {}
 if (!METERS[state.meter]) state.meter = '4/4';
 if (!CHORD_SETS[state.scale]) state.scale = 'major';
+delete state.out;
 delete state.change; delete state.v2;
 CHORDS = chordSet();
 state.mod = ''; // 和弦變化列已移除，一律用原和弦
@@ -187,16 +187,14 @@ function voicing(ch) {
 
 /* ========== 音訊：Karplus-Strong 撥弦 ========== */
 let ctx = null, master = null, makeup = null, audioOut = null;
-// 輸出：一般（低延遲、音量拉滿）／藍牙喇叭（大緩衝、音量留空間、提早排程，避免爆音）
-const OUT = { normal: { hint: 'interactive', makeup: 2.6, ahead: 0.12 }, bt: { hint: 'playback', makeup: 1.2, ahead: 0.3 } };
-const outCfg = () => OUT[state.out] || OUT.normal;
+const MAKEUP = 2.6;
 const bufCache = new Map();
 const strings = new Array(6).fill(null); // 每條弦目前發聲中的 {src, gain}
 const voices = []; // 所有已排程的音 {src, gain, t}
 
 function initAudio() {
   if (ctx) return;
-  ctx = new (window.AudioContext || window.webkitAudioContext)({ latencyHint: outCfg().hint });
+  ctx = new (window.AudioContext || window.webkitAudioContext)({ latencyHint: 'interactive' });
   const body = ctx.createBiquadFilter();
   body.type = 'peaking'; body.frequency.value = 220; body.Q.value = 1; body.gain.value = 4;
   const low = ctx.createBiquadFilter();
@@ -207,7 +205,7 @@ function initAudio() {
   const comp = ctx.createDynamicsCompressor();
   comp.threshold.value = -24; comp.knee.value = 10; comp.ratio.value = 6;
   comp.attack.value = 0.003; comp.release.value = 0.2;
-  makeup = ctx.createGain(); makeup.gain.value = outCfg().makeup;
+  makeup = ctx.createGain(); makeup.gain.value = MAKEUP;
   const limiter = ctx.createDynamicsCompressor();
   limiter.threshold.value = -3; limiter.knee.value = 0; limiter.ratio.value = 20;
   limiter.attack.value = 0.001; limiter.release.value = 0.1;
@@ -466,7 +464,7 @@ function scheduleStep(i, t) {
 function scheduler() {
   const m = METERS[state.meter];
   const total = m.strum.length;
-  while (nextTime < ctx.currentTime + outCfg().ahead) {
+  while (nextTime < ctx.currentTime + 0.12) {
     if (step >= total) step = 0;
     scheduleStep(step, nextTime);
     nextTime += stepDur();
@@ -670,7 +668,6 @@ function render() {
   sheetSel.value = state.scale + ':' + state.sheet;
   patternSel.value = state.pattern;
   $('orderSel').value = state.padOrder;
-  document.querySelectorAll('#outSeg button').forEach((b) => b.classList.toggle('on', b.dataset.out === state.out));
   bpmVal.textContent = state.bpm;
   bpmUnit.textContent = METERS[state.meter].unit;
 
@@ -752,15 +749,6 @@ $('keyDown').addEventListener('click', () => setShift(state.shift - 1));
 $('keyUp').addEventListener('click', () => setShift(state.shift + 1));
 shiftVal.addEventListener('click', () => setShift(0));
 patternSel.addEventListener('change', () => { state.pattern = patternSel.value; save(); buildSteps(); });
-// 換輸出：關掉舊的聲音引擎，下次按鍵時用新設定重建
-$('outSeg').addEventListener('click', (e) => {
-  const b = e.target.closest('button'); if (!b || b.dataset.out === state.out) return;
-  if (playing) stop();
-  state.out = b.dataset.out;
-  if (ctx) { try { ctx.close(); } catch (_) {} ctx = null; master = null; }
-  bufCache.clear(); strings.fill(null); voices.length = 0;
-  save(); render();
-});
 $('orderSel').addEventListener('change', () => {
   state.padOrder = $('orderSel').value;
   if (playing) stop();
