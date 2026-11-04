@@ -210,3 +210,4 @@ body.score-mode .play { height: 46px; font-size: 18px; }
 .hit-head { font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .hit-snip { font-size: 13px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .hit-snip mark { background: var(--accent2); color: #1b1408; border-radius: 3px; }
+.seg.wrap.out-seg { grid-template-columns: repeat(2, 1fr); }
