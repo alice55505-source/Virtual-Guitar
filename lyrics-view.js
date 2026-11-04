@@ -65,9 +65,59 @@ async function autoChordMap(pages, blocks, sheetKey) {
   return map;
 }
 
+/* ---------- 雲端（functions/api/chords.js）：大家共用改過的和弦；手機只留一份快取給離線用 ---------- */
 const lyrStoreKey = () => 'vg-cl-' + hymn.cat + hymn.num;
-function loadSavedMap() { try { return JSON.parse(localStorage.getItem(lyrStoreKey()) || 'null'); } catch (_) { return null; } }
-function saveMap() { try { localStorage.setItem(lyrStoreKey(), JSON.stringify({ map: hymn.lyr.map, sheet: hymn.lyr.sheet })); } catch (_) {} }
+const songId = () => hymn.cat + hymn.num;
+const readCache = () => { try { return JSON.parse(localStorage.getItem(lyrStoreKey()) || 'null'); } catch (_) { return null; } };
+const writeCache = (d) => { try { if (d) localStorage.setItem(lyrStoreKey(), JSON.stringify(d)); else localStorage.removeItem(lyrStoreKey()); } catch (_) {} };
+let editKey = (() => { try { return localStorage.getItem('vg-edit-key') || ''; } catch (_) { return ''; } })();
+
+// 讀雲端：有 → 用雲端並快取；雲端沒有 → 只保留舊版「只存在手機」的修改；連不到 → 用快取
+async function loadSavedMap() {
+  const cache = readCache();
+  try {
+    const r = await fetch('api/chords?song=' + songId(), { cache: 'no-store' });
+    if (r.ok) { const d = await r.json(); writeCache(d); return d; }
+    if (r.status === 404) {
+      if (cache && !cache.updated) return Object.assign(cache, { localOnly: true }); // 舊版只存在這支手機的修改
+      writeCache(null);
+      return null;
+    }
+  } catch (_) {}
+  return cache;
+}
+
+// 存到雲端（要密碼）
+async function saveMap() {
+  const data = { map: hymn.lyr.map, sheet: hymn.lyr.sheet };
+  try {
+    const r = await fetch('api/chords?song=' + songId(), { method: 'PUT', headers: { 'X-Edit-Key': editKey, 'content-type': 'application/json' }, body: JSON.stringify(data) });
+    if (r.status === 401) { editKey = ''; try { localStorage.removeItem('vg-edit-key'); } catch (_) {} alert('編輯密碼錯誤，請重新輸入'); return false; }
+    if (!r.ok) throw new Error(r.status);
+    data.updated = new Date().toISOString();
+    writeCache(data);
+    hymn.lyr.localOnly = false;
+    return true;
+  } catch (_) {
+    alert('上傳失敗（沒有網路或雲端尚未設定），這次修改沒有存到雲端');
+    return false;
+  }
+}
+
+// 進入編輯前確認密碼（記在這支手機，之後不用再輸入）
+async function unlockEdit() {
+  if (editKey) return true;
+  const pw = prompt('請輸入編輯密碼（只有負責的同工可以改和弦）');
+  if (!pw) return false;
+  try {
+    const r = await fetch('api/auth', { method: 'POST', headers: { 'X-Edit-Key': pw } });
+    if (r.status === 401) { alert('密碼錯誤'); return false; }
+    if (!r.ok) throw new Error(r.status);
+  } catch (_) { alert('連不到雲端，暫時不能修改'); return false; }
+  editKey = pw;
+  try { localStorage.setItem('vg-edit-key', pw); } catch (_) {}
+  return true;
+}
 
 // 開歌時呼叫：準備歌詞與和弦（自動或已存的）
 async function prepareLyrics(text, pages) {
@@ -77,9 +127,11 @@ async function prepareLyrics(text, pages) {
   lyrPos = -1;
   updateLyrButtons();
   if (!blocks.length) return;
-  const saved = loadSavedMap();
+  const saved = await loadSavedMap();
+  if (hymn !== h) return;
   if (saved) {
     h.lyr.map = saved.map;
+    h.lyr.localOnly = !!saved.localOnly;
     // 存的時候的主音跟現在不同（例如改了譜上的調）：換算成現在的
     const d = (saved.sheet - state.sheet + 12) % 12;
     if (d) for (const part of ['verse', 'chorus']) for (const k in h.lyr.map[part]) h.lyr.map[part][k].off = (h.lyr.map[part][k].off + d) % 12;
@@ -112,7 +164,8 @@ function renderLyrics() {
   hymn.lyr.seq = []; // 照歌詞順序的所有和弦（點一下換下一個用）
   box.insertAdjacentHTML('beforeend', '<div class="lyr-zoom"><button data-z="-3">A−</button><button data-z="3">A＋</button></div>');
   box.querySelectorAll('.lyr-zoom button').forEach((b) => { b.onclick = () => setLyrFont(lyrFont + +b.dataset.z); });
-  if (lyrEdit) box.insertAdjacentHTML('beforeend', '<div class="lyr-tip">點字加和弦、點和弦修改；每一節共用第一節的和弦位置。<button id="lyrReset">還原自動</button></div>');
+  if (lyrEdit) box.insertAdjacentHTML('beforeend', '<div class="lyr-tip">點字加和弦、點和弦修改，改完自動存到雲端給大家用；每一節共用第一節的和弦位置。<button id="lyrReset">還原自動</button></div>');
+  else if (hymn.lyr.localOnly) box.insertAdjacentHTML('beforeend', '<div class="lyr-tip">這首是之前只存在這支手機的修改；按「✎ 改和弦」輸入密碼後會上傳給大家。</div>');
   else if (hymn.lyr.auto) box.insertAdjacentHTML('beforeend', '<div class="lyr-tip">和弦位置是自動對的，有錯可按「✎ 改和弦」修正。點和弦就會彈。</div>');
   blocks.forEach((b) => {
     const part = b.chorus ? 'chorus' : 'verse';
@@ -148,8 +201,12 @@ function renderLyrics() {
   markSeq(false);
   const rs = $('lyrReset');
   if (rs) rs.onclick = async () => {
-    if (!confirm('清除自己改的和弦，回到自動對位？')) return;
-    try { localStorage.removeItem(lyrStoreKey()); } catch (_) {}
+    if (!confirm('清除大家共用的修改，回到自動對位？')) return;
+    try {
+      const r = await fetch('api/chords?song=' + songId(), { method: 'DELETE', headers: { 'X-Edit-Key': editKey } });
+      if (!r.ok) throw new Error(r.status);
+    } catch (_) { alert('雲端刪除失敗，請確認網路'); return; }
+    writeCache(null);
     hymn.lyr.map = { verse: {}, chorus: {} };
     box.innerHTML = '<div class="lyr-tip">重新對位中…</div>';
     if (OCR_CATS[hymn.cat] && hymn.pages) { hymn.lyr.map = await autoChordMap(hymn.pages, hymn.lyr.blocks, state.sheet); hymn.lyr.auto = true; }
@@ -225,7 +282,13 @@ $('lyrBtn').addEventListener('click', () => {
   try { localStorage.setItem('vg-view', lyrView ? 'lyrics' : 'score'); } catch (_) {}
   renderLyrics();
 });
-$('lyrEditBtn').addEventListener('click', () => { lyrEdit = !lyrEdit; renderLyrics(); });
+$('lyrEditBtn').addEventListener('click', async () => {
+  if (!lyrEdit && !(await unlockEdit())) return;
+  lyrEdit = !lyrEdit;
+  // 舊版只存在手機的修改：解鎖後順便上傳給大家
+  if (lyrEdit && hymn && hymn.lyr && hymn.lyr.localOnly) await saveMap();
+  renderLyrics();
+});
 $('stepNext').addEventListener('pointerdown', (e) => { e.preventDefault(); goSeq(lyrPos + 1); });
 $('stepPrev').addEventListener('pointerdown', (e) => { e.preventDefault(); if (lyrPos > 0) goSeq(lyrPos - 1); });
 $('chordPopCancel').addEventListener('click', () => $('chordPop').classList.add('hidden'));

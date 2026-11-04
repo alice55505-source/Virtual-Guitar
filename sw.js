@@ -1,4 +1,4 @@
-const CACHE = 'guitar-v75';
+const CACHE = 'guitar-v76';
 const ASSETS = [
   './',
   './index.html',
@@ -32,6 +32,7 @@ self.addEventListener('activate', (e) => {
 // 先用網路（拿到最新版），離線時用快取
 self.addEventListener('fetch', (e) => {
   if (e.request.method !== 'GET') return;
+  if (new URL(e.request.url).pathname.includes('/api/')) return; // 雲端資料不快取
   e.respondWith(
     fetch(e.request)
       .then((res) => {
