@@ -109,18 +109,32 @@ async function saveMap() {
   }
 }
 
-// 進入編輯：問密碼。對 → 存雲端；按取消 → 只改這支手機
+// 進入編輯：先選「存自己」或「存雲端」；存雲端才要密碼（密碼對過一次會記住）
+function askSaveTarget() {
+  return new Promise((resolve) => {
+    const pop = $('editPop');
+    pop.classList.remove('hidden');
+    const done = (v) => { pop.classList.add('hidden'); resolve(v); };
+    $('editLocal').onclick = () => done('local');
+    $('editCloud').onclick = () => done('cloud');
+    $('editCancel').onclick = () => done(null);
+  });
+}
 async function chooseEditMode() {
-  if (editKey) { editMode = 'cloud'; return true; }
-  const pw = prompt('輸入編輯密碼：改的和弦會存到雲端給大家用。\n不知道密碼請按「取消」：只改這支手機，不影響別人。');
-  if (!pw) { editMode = 'local'; return true; }
-  try {
-    const r = await fetch('api/auth', { method: 'POST', headers: { 'X-Edit-Key': pw } });
-    if (r.status === 401) { alert('密碼錯誤，這次只改這支手機'); editMode = 'local'; return true; }
-    if (!r.ok) throw new Error(r.status);
-  } catch (_) { alert('連不到雲端，這次只改這支手機'); editMode = 'local'; return true; }
-  editKey = pw;
-  try { localStorage.setItem('vg-edit-key2', pw); } catch (_) {}
+  const t = await askSaveTarget();
+  if (!t) return false;
+  if (t === 'local') { editMode = 'local'; return true; }
+  if (!editKey) {
+    const pw = prompt('請輸入編輯密碼');
+    if (!pw) return false;
+    try {
+      const r = await fetch('api/auth', { method: 'POST', headers: { 'X-Edit-Key': pw } });
+      if (r.status === 401) { alert('密碼錯誤'); return false; }
+      if (!r.ok) throw new Error(r.status);
+    } catch (_) { alert('連不到雲端，請先用「存自己」'); return false; }
+    editKey = pw;
+    try { localStorage.setItem('vg-edit-key2', pw); } catch (_) {}
+  }
   editMode = 'cloud';
   return true;
 }
@@ -305,7 +319,7 @@ $('lyrBtn').addEventListener('click', () => {
   renderLyrics();
 });
 $('lyrEditBtn').addEventListener('click', async () => {
-  if (!lyrEdit) await chooseEditMode();
+  if (!lyrEdit && !(await chooseEditMode())) return;
   lyrEdit = !lyrEdit;
   // 有密碼、而這首用的是自己手機改的：問要不要上傳給大家
   if (lyrEdit && editMode === 'cloud' && hymn && hymn.lyr && hymn.lyr.source === 'mine' && confirm('把這支手機改的和弦上傳給大家？')) await saveMap();

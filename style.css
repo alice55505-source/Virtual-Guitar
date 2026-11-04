@@ -299,3 +299,9 @@ body.lyr-view.pad-hidden #pad, body.lyr-view.pad-hidden .pitch { display: none !
 .lc.cur .chip { background: #2f80ed; outline: 3px solid #ffd08a; }
 .lc.cur .t { background: #ffe8a8; border-radius: 4px; }
 .lc.nxt .chip { outline: 2px dashed #2f80ed; }
+.edit-choice { border: 0; border-radius: 12px; background: var(--panel2); padding: 14px; display: grid; gap: 4px; text-align: left; }
+.edit-choice b { font-size: 19px; }
+.edit-choice small { font-size: 13px; color: var(--muted); }
+.edit-choice.cloud { background: #2f80ed; color: #fff; }
+.edit-choice.cloud small { color: #dbe8ff; }
+.edit-cancel { border: 0; background: transparent; color: var(--muted); padding: 8px; }
