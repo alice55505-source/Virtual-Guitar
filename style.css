@@ -310,3 +310,10 @@ body.lyr-editing .lc[data-k] { min-width: 1.45em; padding: 2px 1px; margin: 1px;
 body.lyr-editing .lc[data-k]:active { background: #ffd08a; }
 body.lyr-editing .lc[data-k] .chip.empty::before { content: '＋'; color: #c9b089; font-weight: 400; }
 body.lyr-editing .lc[data-k] .chip.empty { min-width: 1em; }
+.lyr-tools { display: flex; gap: 6px; margin: 0 0 8px; }
+.lyr-tools button { border: 0; border-radius: 10px; padding: 8px 12px; font-weight: 800; font-size: 15px; }
+.rec-btn { background: #fde2e1; color: #c0392b; }
+.rec-btn.on { background: #c0392b; color: #fff; }
+.auto-btn { background: var(--on); color: #08130d; }
+.auto-btn.on { background: #d9534f; color: #fff; }
+.rec-tip { color: #c0392b; font-weight: 700; }

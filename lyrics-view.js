@@ -89,7 +89,7 @@ async function loadCloud() {
 }
 
 async function saveMap() {
-  const data = { map: hymn.lyr.map, sheet: hymn.lyr.sheet };
+  const data = { map: hymn.lyr.map, sheet: hymn.lyr.sheet, timing: hymn.lyr.timing || null };
   if (editMode !== 'cloud') { lsSet(mineKey(), data); hymn.lyr.source = 'mine'; return true; }
   try {
     const r = await fetch('api/chords?song=' + songId(), { method: 'PUT', headers: { 'X-Edit-Key': editKey, 'content-type': 'application/json' }, body: JSON.stringify(data) });
@@ -154,6 +154,7 @@ async function prepareLyrics(text, pages) {
   h.lyr.source = mine ? 'mine' : cloud ? 'cloud' : 'auto';
   if (saved) {
     h.lyr.map = saved.map;
+    h.lyr.timing = saved.timing || null;
     // 存的時候的主音跟現在不同（例如改了譜上的調）：換算成現在的
     const d = (saved.sheet - state.sheet + 12) % 12;
     if (d) for (const part of ['verse', 'chorus']) for (const k in h.lyr.map[part]) h.lyr.map[part][k].off = (h.lyr.map[part][k].off + d) % 12;
@@ -186,6 +187,13 @@ function renderLyrics() {
   box.innerHTML = '';
   hymn.lyr.seq = []; // 照歌詞順序的所有和弦（點一下換下一個用）
   box.insertAdjacentHTML('beforeend', '<div class="lyr-zoom"><button data-z="-3">A−</button><button data-z="3">A＋</button></div>');
+  if (!lyrEdit) {
+    box.insertAdjacentHTML('beforeend', '<div class="lyr-tools"><button id="recBtn" class="rec-btn"></button><button id="autoBtn" class="auto-btn"></button></div>');
+    $('recBtn').onclick = () => (rec ? cancelRec() : startRec());
+    box.insertAdjacentHTML('beforeend', '<div id="recTip" class="lyr-tip rec-tip" style="display:none">● 錄製中：唱到哪裡就按「下一個」，唱完最後再按一次結束。</div>');
+    if (hymn.lyr.timing && !timingOk()) box.insertAdjacentHTML('beforeend', '<div class="lyr-tip">和弦改過了，之前的錄製對不上，請重錄。</div>');
+    $('autoBtn').onclick = () => (auto ? stop() : startAuto(Math.max(0, lyrPos)));
+  }
   box.querySelectorAll('.lyr-zoom button').forEach((b) => { b.onclick = () => setLyrFont(lyrFont + +b.dataset.z); });
   if (lyrEdit) box.insertAdjacentHTML('beforeend', '<div class="lyr-tip">' + (editMode === 'cloud'
     ? '<b>存到雲端（大家共用）</b>：點字加和弦、點和弦修改。<button id="lyrReset">還原自動</button>'
@@ -279,7 +287,12 @@ function onLyricsTap(e) {
   const cell = e.target.closest('.lc');
   if (!cell || cell.dataset.k === undefined || !hymn || !hymn.lyr) return;
   const c = hymn.lyr.map[cell.dataset.part][+cell.dataset.k];
-  if (c && e.target.closest('.chip')) { e.preventDefault(); goSeq(+cell.dataset.seq); }
+  if (c && e.target.closest('.chip')) {
+    e.preventDefault();
+    if (rec) return; // 錄製中只能按「下一個」
+    if (timingOk()) startAuto(+cell.dataset.seq); // 有錄過：從這裡自動播放
+    else goSeq(+cell.dataset.seq);
+  }
 }
 
 // 編輯模式：用 click（捲動時不會誤觸）；點在字與字的空隙、標點上，就找最近的字
@@ -313,12 +326,77 @@ let lyrPos = -1; // 目前彈到第幾個和弦（-1 = 還沒開始）
 function goSeq(i) {
   const seq = hymn && hymn.lyr && hymn.lyr.seq;
   if (!seq || !seq.length) return;
-  if (i >= seq.length) { lyrPos = -1; if (playing) stop(); markSeq(); return; } // 唱完了
+  auto = null; // 手動按 → 停止自動播放
+  if (i >= seq.length) { // 唱完了
+    if (rec) finishRec();
+    lyrPos = -1; if (playing) stop(); markSeq(); return;
+  }
   lyrPos = Math.max(0, i);
   const c = seq[lyrPos];
   pressChordObj({ off: c.off, q: c.q });
+  if (rec) recMark(lyrPos);
   markSeq(true);
 }
+
+/* ---------- 錄製：照平常按「下一個」彈一次，記下每個和弦彈幾拍 ---------- */
+let rec = null;  // {t0, marks: [第幾拍換到第 i 個和弦]}
+let auto = null; // 自動播放 {i: 第幾個和弦, left: 這個和弦還剩幾拍}
+const timingOk = () => !!(hymn && hymn.lyr && hymn.lyr.timing && hymn.lyr.timing.n === hymn.lyr.seq.length);
+
+function startRec() {
+  if (!hymn.lyr.seq.length) { alert('這首還沒有和弦'); return; }
+  if (playing) stop();
+  rec = { marks: [] };
+  lyrPos = -1;
+  renderLyrics();
+  alert('錄製開始：跟平常一樣，唱到哪裡就按藍色「下一個」。\n彈完最後一個和弦、唱完時，再按一次結束。');
+}
+function cancelRec() { rec = null; if (playing) stop(); renderLyrics(); }
+function recMark(i) {
+  const t = lastChangeTime();
+  if (rec.t0 === undefined) rec.t0 = t;
+  rec.marks[i] = Math.round((t - rec.t0) / beatSec());
+}
+async function finishRec() {
+  const n = hymn.lyr.seq.length, marks = rec.marks;
+  const end = Math.round((ctx.currentTime - rec.t0) / beatSec());
+  rec = null;
+  if (marks.length !== n || marks.some((x) => x === undefined)) { alert('錄製不完整（要從第一個和弦一路按到最後），請重錄'); renderLyrics(); return; }
+  const beats = marks.map((b, i) => Math.max(1, (i + 1 < n ? marks[i + 1] : Math.max(end, b + 1)) - b));
+  hymn.lyr.timing = { beats, n, meter: state.meter };
+  // 存自己或存雲端（跟改和弦一樣）
+  if (await chooseEditMode()) { await saveMap(); alert('錄好了！之後按「▶ 自動播放」，或點歌詞上的和弦從那裡開始。'); }
+  renderLyrics();
+}
+
+/* ---------- 自動播放：照錄好的拍數換和弦 ---------- */
+function startAuto(i) {
+  if (!timingOk()) return;
+  rec = null;
+  auto = { i };
+  if (!playing) { const c = hymn.lyr.seq[i]; current = { off: c.off, q: c.q }; start(); }
+  markSeq();
+}
+const chordAt = (i) => { const c = hymn.lyr.seq[i]; return { off: c.off, q: c.q }; };
+function uiAt(t, i) {
+  setTimeout(() => { lyrPos = i; markSeq(i >= 0); }, Math.max(0, (t - ctx.currentTime) * 1000));
+}
+window.beatHook = (t) => {
+  if (!auto || !timingOk()) return null;
+  const beats = hymn.lyr.timing.beats;
+  if (auto.left === undefined) { auto.left = beats[auto.i]; uiAt(t, auto.i); return chordAt(auto.i); }
+  if (--auto.left > 0) return null;
+  auto.i++;
+  if (auto.i >= beats.length) { // 播完
+    auto = null;
+    setTimeout(() => { if (playing) stop(); lyrPos = -1; markSeq(); }, Math.max(0, (t - ctx.currentTime) * 1000));
+    return null;
+  }
+  auto.left = beats[auto.i];
+  uiAt(t, auto.i);
+  return chordAt(auto.i);
+};
+window.onStopHook = () => { auto = null; if (rec) rec = null; setTimeout(markSeq, 0); };
 // 框出目前的和弦、淡淡標出下一個，並捲到看得到
 function markSeq(scroll) {
   const box = $('lyricsBox');
@@ -333,7 +411,13 @@ function markSeq(scroll) {
   $('stepNext').innerHTML = lyrPos < 0
     ? (seq.length ? '▶ 從頭開始：<b>' + chordName(seq[0]) + '</b>' : '這首還沒有和弦')
     : n ? '下一個 <b>' + chordName(n) + '</b> ▶' : '■ 結束';
-  $('stepPrev').disabled = lyrPos <= 0;
+  $('stepPrev').disabled = lyrPos <= 0 || !!rec;
+  const rb = $('recBtn'), ab = $('autoBtn');
+  if (rb) { rb.textContent = rec ? '✕ 取消錄製' : (timingOk() ? '● 重錄' : '● 錄製'); rb.classList.toggle('on', !!rec); }
+  if (ab) { ab.style.display = timingOk() && !rec ? '' : 'none'; ab.textContent = auto ? '■ 停止自動' : '▶ 自動播放'; ab.classList.toggle('on', !!auto); }
+  if (rec) $('stepNext').innerHTML = '● 錄製中：' + $('stepNext').innerHTML;
+  const tip = $('recTip');
+  if (tip) tip.style.display = rec ? '' : 'none';
 }
 
 function openChordEditor(part, k) {

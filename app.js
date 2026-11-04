@@ -430,6 +430,8 @@ function scheduleStep(i, t) {
   const dur = stepDur();
   const isBeat = i % m.spb === 0;
   if (isBeat) { beatHist.push(t); if (beatHist.length > 16) beatHist.shift(); }
+  // 歌詞自動播放：每一拍問一次要不要換和弦（lyrics-view.js）
+  if (isBeat && window.beatHook) { const ch = window.beatHook(t); if (ch) { current = ch; pending = null; } }
   if (pending !== null) {
     const due = isBeat && t >= pendingAt - 1e-3;
     if (due) { current = pending; pending = null; }
@@ -496,7 +498,16 @@ function start() {
   render();
 }
 
+// 剛按的和弦什麼時候生效（錄製用）：等下一拍 → 那一拍；馬上換 → 剛過的拍；剛開始 → 第一拍
+function lastChangeTime() {
+  if (pending !== null) return pendingAt;
+  const lb = lastBeatTime(ctx.currentTime);
+  return isFinite(lb) ? lb : (beatHist[0] !== undefined ? beatHist[0] : ctx.currentTime);
+}
+const beatSec = () => stepDur() * METERS[state.meter].spb;
+
 function stop() {
+  if (window.onStopHook) window.onStopHook();
   playing = false;
   clearInterval(timer); timer = null;
   stopAll();
